@@ -496,7 +496,8 @@ function renderAdminUI() {
   document.getElementById("team-label").textContent = isAdmin ? "开发团队 · 点击成员可编辑姓名" : "开发团队";
   document.getElementById("admin-btn").textContent = isAdmin ? "管理员 ✓" : "管理员登录";
   document.getElementById("admin-btn").className = isAdmin ? "admin-btn logged-in" : "admin-btn logged-out";
-  document.getElementById("preview-hint").textContent = isAdmin ? "点击分发，系统自动公平轮转" : "等待管理员分发任务…";
+  const hint = document.getElementById("preview-hint");
+  if (hint) hint.textContent = isAdmin ? "点击分发，系统自动公平轮转" : "等待管理员分发任务…";
 
   // Update dispatch button
   if (isAdmin) {
@@ -693,8 +694,11 @@ window.deleteTask = function(idx) {
 // ── Set Type ──────────────────────────────────────────────────────────────────
 window.setType = function(type) {
   if (!isAdmin) return;
-  const s = { ...state, currentType: type };
-  saveState(s);
+  state = { ...state, currentType: type };
+  renderAdminUI();
+  renderQueue();
+  renderMembers();
+  saveState(state);
 };
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
