@@ -400,7 +400,7 @@ const firebaseConfig = {
   storageBucket: "task-dispatch-73aab.appspot.com",
 };
 
-const ADMIN_PASSWORD = "admin123"; // ← 可以改成你想要的密码
+// 密码在 Vercel 环境变量里，前端不存储任何密码
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -719,15 +719,33 @@ window.closePwModal = function() {
   document.getElementById("pw-error").style.display = "none";
   document.getElementById("pw-input").classList.remove("error");
 };
-window.tryLogin = function() {
+window.tryLogin = async function() {
   const val = document.getElementById("pw-input").value;
-  if (val === ADMIN_PASSWORD) {
-    isAdmin = true;
-    closePwModal();
-    render();
-  } else {
+  const saveBtn = document.querySelector("#pw-modal .modal-save");
+  saveBtn.textContent = "验证中…";
+  saveBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: val }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      isAdmin = true;
+      closePwModal();
+      render();
+    } else {
+      document.getElementById("pw-error").style.display = "block";
+      document.getElementById("pw-input").classList.add("error");
+    }
+  } catch(e) {
+    document.getElementById("pw-error").textContent = "网络错误，请重试";
     document.getElementById("pw-error").style.display = "block";
-    document.getElementById("pw-input").classList.add("error");
+  } finally {
+    saveBtn.textContent = "登录";
+    saveBtn.disabled = false;
   }
 };
 document.getElementById("pw-modal").addEventListener("click", function(e) {
