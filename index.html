@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>任务分发系统</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #f5f2eb;
+  --ink: #1a1814;
+  --muted: #8a8578;
+  --fe-color: #c8440a;
+  --be-color: #1a5c8a;
+  --fe-light: #fdf0ea;
+  --be-light: #e8f2fa;
+  --fe-mid: #f0c4b0;
+  --be-mid: #aecde6;
+  --border: #d8d4cc;
+  --card: #ffffff;
+  --highlight: #f0e840;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+header {
+  background: var(--ink);
+  color: var(--bg);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid var(--highlight);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
+header h1 span { color: var(--highlight); }
+
+.header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.sync-status { font-family: 'DM Mono', monospace; font-size: 0.65rem; }
+.sync-idle { color: var(--muted); }
+.sync-saving { color: var(--highlight); }
+.sync-saved { color: #60c080; }
+.sync-error { color: #f06060; }
+
+.header-meta { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); text-align: right; }
+.header-meta strong { color: var(--highlight); display: block; font-size: 1.1rem; }
+
+.admin-btn {
+  padding: 6px 14px; border-radius: 4px; font-family: 'Syne', sans-serif;
+  font-size: 0.75rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s;
+}
+.admin-btn.logged-in { background: var(--highlight); color: var(--ink); }
+.admin-btn.logged-out { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  min-height: calc(100vh - 65px);
+}
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+.team-panel { padding: 28px 32px; border-right: 2px solid var(--border); }
+.dispatch-panel { padding: 28px 24px; background: var(--card); display: flex; flex-direction: column; gap: 14px; }
+
+.section-label {
+  font-family: 'DM Mono', monospace; font-size: 0.65rem; font-weight: 500;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 14px;
+}
+
+.group-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.group-tag {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 2px;
+}
+.group-tag.fe { background: var(--fe-color); color: white; }
+.group-tag.be { background: var(--be-color); color: white; }
+.group-count { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); }
+
+.members-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 8px; }
+
+.member-card {
+  background: var(--card); border: 2px solid var(--border); border-radius: 8px;
+  padding: 12px 8px; text-align: center; transition: all 0.15s ease; position: relative; user-select: none;
+}
+.member-card.fe { border-color: var(--fe-mid); background: var(--fe-light); }
+.member-card.be { border-color: var(--be-mid); background: var(--be-light); }
+.member-card.clickable { cursor: pointer; }
+.member-card.clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+@keyframes pulse-next {
+  0%,100% { box-shadow: 0 0 0 0 rgba(240,232,64,0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(240,232,64,0); }
+}
+.next-up { outline: 3px solid var(--highlight); outline-offset: 1px; animation: pulse-next 1.5s ease-in-out infinite; }
+
+@keyframes flash-assign {
+  0% { transform: scale(1.08); background: var(--highlight) !important; border-color: var(--ink) !important; }
+  100% { transform: scale(1); }
+}
+.just-assigned { animation: flash-assign 0.6s ease; }
+
+.member-avatar {
+  width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 1rem; margin: 0 auto 6px; font-weight: 700;
+}
+.fe .member-avatar { background: var(--fe-mid); color: var(--fe-color); }
+.be .member-avatar { background: var(--be-mid); color: var(--be-color); }
+
+.member-name { font-size: 0.76rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-tasks { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
+.member-tasks strong { font-size: 1rem; color: var(--ink); display: block; }
+
+.task-dots { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; margin-top: 5px; min-height: 8px; }
+.task-dot { width: 6px; height: 6px; border-radius: 50%; }
+.fe .task-dot { background: var(--fe-color); }
+.be .task-dot { background: var(--be-color); }
+
+.queue-strip {
+  display: flex; gap: 6px; align-items: center; margin: 18px 0 8px;
+  padding: 12px 16px; background: var(--ink); border-radius: 6; overflow-x: auto;
+}
+.queue-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); white-space: nowrap; letter-spacing: 1px; text-transform: uppercase; }
+.queue-item {
+  padding: 3px 9px; border-radius: 3px; font-size: 0.68rem; font-weight: 700;
+  white-space: nowrap; font-family: 'DM Mono', monospace;
+}
+.queue-item.fe { background: var(--fe-color); color: white; }
+.queue-item.be { background: var(--be-color); color: white; }
+.queue-item.current { outline: 2px solid var(--highlight); outline-offset: 1px; }
+.queue-arrow { color: var(--muted); font-size: 0.8rem; margin: 0 2px; }
+
+.stats-bar {
+  display: flex; gap: 18px; margin-top: 12px; padding: 14px 18px;
+  background: var(--card); border: 1.5px solid var(--border); border-radius: 6px; align-items: center;
+}
+.stat-item { text-align: center; }
+.stat-num { font-family: 'DM Mono', monospace; font-size: 1.3rem; font-weight: 500; display: block; }
+.stat-lbl { font-size: 0.62rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+.stat-item.fe .stat-num { color: var(--fe-color); }
+.stat-item.be .stat-num { color: var(--be-color); }
+.fairness-wrap { flex: 1; }
+.fairness-lbl { display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); margin-bottom: 4px; }
+.fairness-bg { background: var(--border); border-radius: 10px; height: 8px; overflow: hidden; }
+.fairness-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #e05c0a, #40c060); transition: width 0.5s ease; }
+
+.type-toggle { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 2px solid var(--border); border-radius: 6px; overflow: hidden; }
+.type-btn { padding: 10px 4px; border: none; font-family: 'Syne', sans-serif; font-size: 0.73rem; font-weight: 700; cursor: pointer; background: var(--bg); color: var(--muted); transition: all 0.15s; }
+.type-btn:not(:last-child) { border-right: 1.5px solid var(--border); }
+.type-btn.active-fe { background: var(--fe-color); color: white; }
+.type-btn.active-be { background: var(--be-color); color: white; }
+.type-btn.active-any { background: var(--ink); color: var(--highlight); }
+
+.task-input {
+  width: 100%; padding: 11px 13px; border: 2px solid var(--border); border-radius: 6px;
+  font-family: 'DM Mono', monospace; font-size: 0.85rem; background: var(--bg); color: var(--ink); outline: none; transition: border-color 0.15s;
+}
+.task-input:focus { border-color: var(--ink); }
+.task-input::placeholder { color: var(--muted); }
+
+.dispatch-btn {
+  width: 100%; padding: 15px; border: none; border-radius: 6px; font-family: 'Syne', sans-serif;
+  font-size: 0.95rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.15s;
+}
+.dispatch-btn.fe { background: var(--fe-color); color: white; }
+.dispatch-btn.be { background: var(--be-color); color: white; }
+.dispatch-btn.any { background: var(--ink); color: var(--highlight); }
+.dispatch-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+.dispatch-btn:active { transform: translateY(0); }
+
+.assigned-preview {
+  padding: 14px; border-radius: 6px; min-height: 60px; display: flex; align-items: center;
+  justify-content: center; border: 2px dashed var(--border); transition: all 0.3s;
+}
+.assigned-preview.fe { border-color: var(--fe-color); background: var(--fe-light); }
+.assigned-preview.be { border-color: var(--be-color); background: var(--be-light); }
+.assigned-name { font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+.assigned-badge { font-size: 0.6rem; padding: 2px 7px; border-radius: 2px; font-weight: 700; letter-spacing: 1px; }
+.assigned-badge.fe { background: var(--fe-color); color: white; }
+.assigned-badge.be { background: var(--be-color); color: white; }
+.preview-hint { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); text-align: center; }
+
+.divider { height: 1px; background: var(--border); }
+
+.history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; max-height: 320px; }
+.history-list::-webkit-scrollbar { width: 4px; }
+.history-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.history-item {
+  display: flex; align-items: center; gap: 7px; padding: 7px 9px; border-radius: 5px;
+  border: 1.5px solid var(--border); font-size: 0.78rem;
+}
+.history-item.fe { border-color: var(--fe-mid); background: var(--fe-light); }
+.history-item.be { border-color: var(--be-mid); background: var(--be-light); }
+
+@keyframes slide-in { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+.history-item { animation: slide-in 0.25s ease; }
+
+@keyframes slide-out { to { opacity: 0; transform: translateX(20px); max-height: 0; padding: 0; margin: 0; border-width: 0; } }
+.removing { animation: slide-out 0.25s ease forwards; overflow: hidden; }
+
+.h-idx { font-family: 'DM Mono', monospace; font-size: 0.62rem; color: var(--muted); min-width: 18px; }
+.h-badge { font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; font-weight: 700; }
+.h-badge.fe { background: var(--fe-color); color: white; }
+.h-badge.be { background: var(--be-color); color: white; }
+.h-who { font-weight: 700; flex: 1; }
+.h-task { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-del { background: none; border: none; cursor: pointer; color: var(--border); font-size: 0.85rem; padding: 2px 4px; border-radius: 3px; transition: all 0.15s; line-height: 1; }
+.h-del:hover { color: #c0392b; background: #fdf0ee; }
+
+.no-history { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); text-align: center; padding: 20px 0; }
+
+.reset-btn {
+  width: 100%; padding: 10px; background: transparent; color: var(--muted);
+  border: 1.5px solid var(--border); border-radius: 6px; font-family: 'DM Mono', monospace;
+  font-size: 0.72rem; cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px;
+}
+.reset-btn:hover { border-color: #c0392b; color: #c0392b; background: #fdf0ee; }
+
+/* MODALS */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(26,24,20,0.7);
+  z-index: 100; align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: var(--card); border: 2px solid var(--ink); border-radius: 10px;
+  padding: 28px; width: 300px; box-shadow: 6px 6px 0 var(--ink);
+}
+.modal-box h3 { font-size: 1rem; font-weight: 800; margin-bottom: 6px; }
+.modal-box p { font-size: 0.72rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 16px; }
+.modal-input {
+  width: 100%; padding: 10px 12px; border: 2px solid var(--border); border-radius: 6px;
+  font-family: 'DM Mono', monospace; font-size: 0.9rem; background: var(--bg); color: var(--ink);
+  outline: none; margin-bottom: 14px; transition: border-color 0.15s;
+}
+.modal-input:focus { border-color: var(--ink); }
+.modal-input.error { border-color: #c0392b; }
+.modal-error { font-size: 0.7rem; color: #c0392b; font-family: 'DM Mono', monospace; margin: -10px 0 10px; }
+.modal-actions { display: flex; gap: 10px; }
+.modal-cancel { padding: 10px 18px; background: transparent; color: var(--muted); border: 1.5px solid var(--border); border-radius: 5px; font-family: 'Syne', sans-serif; font-weight: 600; cursor: pointer; }
+.modal-save { flex: 1; padding: 10px; background: var(--ink); color: var(--highlight); border: none; border-radius: 5px; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; }
+
+/* LOADING */
+.loading-screen {
+  display: flex; align-items: center; justify-content: center; height: 100vh;
+  flex-direction: column; gap: 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--ink); border-radius: 50%; animation: spin 1s linear infinite; }
+.loading-text { font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--muted); }
+
+</style>
+</head>
+<body>
+
+<div id="loading-screen" class="loading-screen">
+  <div class="spinner"></div>
+  <p class="loading-text">正在加载云端数据…</p>
+</div>
+
+<div id="app" style="display:none">
+
+<header>
+  <h1>任务分发 <span>/ DISPATCH</span></h1>
+  <div class="header-right">
+    <span id="sync-status" class="sync-status sync-idle">☁ 云端共享</span>
+    <div class="header-meta">
+      <strong id="total-count">0</strong>
+      任务已分发
+    </div>
+    <button id="admin-btn" class="admin-btn logged-out" onclick="toggleAdminModal()">管理员登录</button>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- LEFT -->
+  <div class="team-panel">
+    <p class="section-label" id="team-label">开发团队</p>
+
+    <div class="group-header">
+      <span class="group-tag fe">前端 FE</span>
+      <span class="group-count" id="fe-count">0 任务</span>
+    </div>
+    <div class="members-grid" id="fe-grid"></div>
+
+    <div class="group-header" style="margin-top:24px">
+      <span class="group-tag be">后端 BE</span>
+      <span class="group-count" id="be-count">0 任务</span>
+    </div>
+    <div class="members-grid" id="be-grid"></div>
+
+    <div class="queue-strip" id="queue-strip">
+      <span class="queue-label">轮转顺序 →</span>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-item fe">
+        <span class="stat-num" id="stat-fe">0</span>
+        <span class="stat-lbl">前端任务</span>
+      </div>
+      <div class="stat-item be">
+        <span class="stat-num" id="stat-be">0</span>
+        <span class="stat-lbl">后端任务</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="stat-total" style="color:var(--ink)">0</span>
+        <span class="stat-lbl">总计</span>
+      </div>
+      <div class="fairness-wrap">
+        <div class="fairness-lbl"><span>均衡度</span><span id="fairness-pct">—</span></div>
+        <div class="fairness-bg"><div class="fairness-fill" id="fairness-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="dispatch-panel">
+    <p class="section-label" id="dispatch-label">查看模式（只读）</p>
+
+    <div id="admin-controls" style="display:none; flex-direction:column; gap:12px;">
+      <div class="type-toggle">
+        <button class="type-btn active-fe" onclick="setType('fe')">前端 FE</button>
+        <button class="type-btn" onclick="setType('any')">任意</button>
+        <button class="type-btn" onclick="setType('be')">后端 BE</button>
+      </div>
+      <input type="text" id="task-input" class="task-input" placeholder="任务名称（可选）" />
+      <button id="dispatch-btn" class="dispatch-btn fe" onclick="dispatchTask()">→ 分发给前端</button>
+    </div>
+
+    <div class="assigned-preview" id="assigned-preview">
+      <span class="preview-hint" id="preview-hint">等待管理员分发任务…</span>
+    </div>
+
+    <div class="divider"></div>
+    <p class="section-label" style="margin-bottom:8px">分发记录</p>
+    <div class="history-list" id="history-list"></div>
+
+    <div id="admin-footer" style="display:none">
+      <button class="reset-btn" onclick="confirmReset()">↺ 重置所有数据</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- PASSWORD MODAL -->
+<div class="modal-overlay" id="pw-modal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>管理员登录</h3>
+    <p>输入密码以获得分发权限</p>
+    <input type="password" id="pw-input" class="modal-input" placeholder="密码" onkeydown="if(event.key==='Enter')tryLogin(); if(event.key==='Escape')closePwModal();" />
+    <p class="modal-error" id="pw-error" style="display:none">密码错误</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closePwModal()">取消</button>
+      <button class="modal-save" onclick="tryLogin()">登录</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAME EDIT MODAL -->
+<div class="modal-overlay" id="name-modal" onclick="closeNameModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3 id="name-modal-title">编辑成员姓名</h3>
+    <p>修改后所有人实时看到更新</p>
+    <input type="text" id="name-input" class="modal-input" placeholder="输入姓名" onkeydown="if(event.key==='Enter')saveName(); if(event.key==='Escape')closeNameModal();" />
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeNameModal()">取消</button>
+      <button class="modal-save" onclick="saveName()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ── Firebase Config ──────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyAJkcPg8oQYkjCwyRJ1qB79iqNq6bV_M58",
+  authDomain: "task-dispatch-73aab.firebaseapp.com",
+  databaseURL: "https://task-dispatch-73aab-default-rtdb.firebaseio.com",
+  projectId: "task-dispatch-73aab",
+  storageBucket: "task-dispatch-73aab.appspot.com",
+};
+
+const ADMIN_PASSWORD = "admin123"; // ← 可以改成你想要的密码
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const stateRef = ref(db, "dispatch/state");
+
+// ── Default State ─────────────────────────────────────────────────────────────
+function defaultState() {
+  return {
+    members: {
+      fe: [0,1,2,3,4].map(i => ({ id: `fe${i}`, name: `前端-${i+1}`, type: "fe", tasks: 0 })),
+      be: [0,1,2,3,4].map(i => ({ id: `be${i}`, name: `后端-${i+1}`, type: "be", tasks: 0 })),
+    },
+    pointers: { fe: 0, be: 0, any: 0 },
+    history: [],
+    currentType: "fe",
+    lastAssigned: null,
+  };
+}
+
+// ── Local State ───────────────────────────────────────────────────────────────
+let state = null;
+let isAdmin = false;
+let editTarget = null;
+let flashTimeout = null;
+
+// ── Save to Firebase ──────────────────────────────────────────────────────────
+async function saveState(newState) {
+  setSyncStatus("saving");
+  try {
+    await set(stateRef, newState);
+    setSyncStatus("saved");
+    setTimeout(() => setSyncStatus("idle"), 1500);
+  } catch(e) {
+    setSyncStatus("error");
+    console.error("Save failed:", e);
+  }
+}
+
+function setSyncStatus(status) {
+  const el = document.getElementById("sync-status");
+  el.className = "sync-status sync-" + status;
+  el.textContent = { idle: "☁ 云端共享", saving: "⟳ 同步中…", saved: "✓ 已同步", error: "✗ 同步失败" }[status];
+}
+
+// ── Init: listen to Firebase ──────────────────────────────────────────────────
+async function init() {
+  try {
+    const snap = await get(stateRef);
+    if (!snap.exists()) {
+      await set(stateRef, defaultState());
+    }
+  } catch(e) {}
+
+  onValue(stateRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) { state = defaultState(); }
+    else {
+      // Ensure arrays (Firebase converts arrays to objects sometimes)
+      state = {
+        ...defaultState(),
+        ...data,
+        members: {
+          fe: Object.values(data.members?.fe || {}).map((m,i) => ({ id: `fe${i}`, name: m.name, type: "fe", tasks: m.tasks || 0 })),
+          be: Object.values(data.members?.be || {}).map((m,i) => ({ id: `be${i}`, name: m.name, type: "be", tasks: m.tasks || 0 })),
+        },
+        history: data.history ? Object.values(data.history) : [],
+        pointers: { fe: data.pointers?.fe || 0, be: data.pointers?.be || 0, any: data.pointers?.any || 0 },
+        currentType: data.currentType || "fe",
+        lastAssigned: data.lastAssigned || null,
+      };
+    }
+    document.getElementById("loading-screen").style.display = "none";
+    document.getElementById("app").style.display = "block";
+    render();
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  if (!state) return;
+  renderMembers();
+  renderQueue();
+  renderStats();
+  renderHistory();
+  renderAssigned();
+  renderAdminUI();
+}
+
+function renderAdminUI() {
+  document.getElementById("admin-controls").style.display = isAdmin ? "flex" : "none";
+  document.getElementById("admin-footer").style.display = isAdmin ? "block" : "none";
+  document.getElementById("dispatch-label").textContent = isAdmin ? "分发任务" : "查看模式（只读）";
+  document.getElementById("team-label").textContent = isAdmin ? "开发团队 · 点击成员可编辑姓名" : "开发团队";
+  document.getElementById("admin-btn").textContent = isAdmin ? "管理员 ✓" : "管理员登录";
+  document.getElementById("admin-btn").className = isAdmin ? "admin-btn logged-in" : "admin-btn logged-out";
+  document.getElementById("preview-hint").textContent = isAdmin ? "点击分发，系统自动公平轮转" : "等待管理员分发任务…";
+
+  // Update dispatch button
+  if (isAdmin) {
+    const t = state.currentType;
+    const btn = document.getElementById("dispatch-btn");
+    btn.className = "dispatch-btn " + t;
+    btn.textContent = t === "fe" ? "→ 分发给前端" : t === "be" ? "→ 分发给后端" : "→ 智能分发";
+
+    // Update type buttons
+    const btns = document.querySelectorAll(".type-btn");
+    btns[0].className = "type-btn" + (t === "fe" ? " active-fe" : "");
+    btns[1].className = "type-btn" + (t === "any" ? " active-any" : "");
+    btns[2].className = "type-btn" + (t === "be" ? " active-be" : "");
+  }
+}
+
+function renderMembers() {
+  ["fe","be"].forEach(type => {
+    const grid = document.getElementById(`${type}-grid`);
+    grid.innerHTML = "";
+    const t = state.currentType;
+    state.members[type].forEach((m, idx) => {
+      const isNext = t !== "any" && t === type && idx === state.pointers[type] % 5;
+      const dots = Math.min(m.tasks, 20);
+      const div = document.createElement("div");
+      div.className = `member-card ${type}${isNext ? " next-up" : ""}${isAdmin ? " clickable" : ""}`;
+      div.id = `card-${m.id}`;
+      if (isAdmin) div.onclick = () => openNameModal(type, idx);
+      div.innerHTML = `
+        <div class="member-avatar">${m.name.charAt(0)}</div>
+        <div class="member-name">${m.name}</div>
+        <div class="member-tasks"><strong>${m.tasks}</strong>任务</div>
+        <div class="task-dots">${Array(dots).fill('<div class="task-dot"></div>').join("")}</div>
+      `;
+      grid.appendChild(div);
+    });
+    const total = state.members[type].reduce((s, m) => s + m.tasks, 0);
+    document.getElementById(`${type}-count`).textContent = `${total} 任务`;
+  });
+}
+
+function renderQueue() {
+  const strip = document.getElementById("queue-strip");
+  strip.innerHTML = '<span class="queue-label">轮转顺序 →</span>';
+  const t = state.currentType;
+  let members;
+  if (t === "any") {
+    const all = [...state.members.fe, ...state.members.be];
+    const p = state.pointers.any % all.length;
+    members = [...all.slice(p), ...all.slice(0, p)];
+  } else {
+    const arr = state.members[t];
+    const p = state.pointers[t] % arr.length;
+    members = [...arr.slice(p), ...arr.slice(0, p)];
+  }
+  members.slice(0, 8).forEach((m, i) => {
+    const span = document.createElement("span");
+    span.className = `queue-item ${m.type}${i === 0 ? " current" : ""}`;
+    span.textContent = m.name;
+    strip.appendChild(span);
+    if (i < Math.min(members.length - 1, 7)) {
+      const arr = document.createElement("span");
+      arr.className = "queue-arrow";
+      arr.textContent = "›";
+      strip.appendChild(arr);
+    }
+  });
+  if (members.length > 8) {
+    const more = document.createElement("span");
+    more.className = "queue-arrow";
+    more.textContent = "···";
+    strip.appendChild(more);
+  }
+}
+
+function renderStats() {
+  const fe = state.members.fe.reduce((s, m) => s + m.tasks, 0);
+  const be = state.members.be.reduce((s, m) => s + m.tasks, 0);
+  const total = fe + be;
+  document.getElementById("stat-fe").textContent = fe;
+  document.getElementById("stat-be").textContent = be;
+  document.getElementById("stat-total").textContent = total;
+  document.getElementById("total-count").textContent = total;
+
+  if (total > 0) {
+    const all = [...state.members.fe, ...state.members.be].map(m => m.tasks);
+    const mean = all.reduce((a,b) => a+b, 0) / all.length;
+    const variance = all.reduce((s,v) => s + Math.pow(v-mean,2), 0) / all.length;
+    const cv = mean > 0 ? Math.sqrt(variance) / mean : 0;
+    const fairness = Math.max(0, Math.min(100, Math.round((1 - cv) * 100)));
+    document.getElementById("fairness-pct").textContent = `${fairness}%`;
+    document.getElementById("fairness-bar").style.width = `${fairness}%`;
+  } else {
+    document.getElementById("fairness-pct").textContent = "—";
+    document.getElementById("fairness-bar").style.width = "0%";
+  }
+}
+
+function renderAssigned() {
+  const preview = document.getElementById("assigned-preview");
+  const la = state.lastAssigned;
+  if (la) {
+    preview.className = `assigned-preview ${la.type}`;
+    preview.innerHTML = `<div class="assigned-name"><span class="assigned-badge ${la.type}">${la.type.toUpperCase()}</span>${la.name}${la.task ? `<span style="font-size:0.8rem;font-weight:400;color:var(--muted)">· ${la.task}</span>` : ""}</div>`;
+  } else {
+    preview.className = "assigned-preview";
+    preview.innerHTML = `<span class="preview-hint" id="preview-hint">${isAdmin ? "点击分发，系统自动公平轮转" : "等待管理员分发任务…"}</span>`;
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById("history-list");
+  list.innerHTML = "";
+  if (!state.history || state.history.length === 0) {
+    list.innerHTML = '<p class="no-history">暂无记录</p>';
+    return;
+  }
+  [...state.history].reverse().slice(0, 30).forEach((h, i) => {
+    const realIdx = state.history.length - 1 - i;
+    const div = document.createElement("div");
+    div.className = `history-item ${h.type}`;
+    div.id = `h-${realIdx}`;
+    div.innerHTML = `
+      <span class="h-idx">${realIdx + 1}</span>
+      <span class="h-badge ${h.type}">${h.type.toUpperCase()}</span>
+      <span class="h-who">${h.name}</span>
+      <span class="h-task">${h.task || "—"}</span>
+      ${isAdmin ? `<button class="h-del" onclick="deleteTask(${realIdx})" title="删除">✕</button>` : ""}
+    `;
+    list.appendChild(div);
+  });
+}
+
+// ── Dispatch ──────────────────────────────────────────────────────────────────
+window.dispatchTask = function() {
+  if (!isAdmin || !state) return;
+  const taskName = document.getElementById("task-input").value.trim();
+  const s = JSON.parse(JSON.stringify(state));
+  const t = s.currentType;
+  let member;
+
+  if (t === "any") {
+    const all = [...s.members.fe, ...s.members.be];
+    const p = s.pointers.any % all.length;
+    const minTasks = Math.min(...all.map(m => m.tasks));
+    let chosen = null;
+    for (let i = 0; i < all.length; i++) {
+      const m = all[(p + i) % all.length];
+      if (m.tasks === minTasks) { chosen = m; break; }
+    }
+    member = chosen;
+    s.pointers.any = (s.pointers.any + 1) % all.length;
+  } else {
+    const arr = s.members[t];
+    const idx = s.pointers[t] % arr.length;
+    member = arr[idx];
+    s.pointers[t] = (s.pointers[t] + 1) % arr.length;
+  }
+
+  s.members[member.type].find(m => m.id === member.id).tasks++;
+  if (!s.history) s.history = [];
+  s.history.push({ name: member.name, type: member.type, task: taskName, ts: Date.now() });
+  s.lastAssigned = { name: member.name, type: member.type, task: taskName };
+
+  document.getElementById("task-input").value = "";
+
+  // Flash card
+  const card = document.getElementById(`card-${member.id}`);
+  if (card) {
+    card.classList.remove("just-assigned");
+    void card.offsetWidth;
+    card.classList.add("just-assigned");
+    setTimeout(() => card.classList.remove("just-assigned"), 700);
+  }
+
+  saveState(s);
+};
+
+// ── Delete Task ───────────────────────────────────────────────────────────────
+window.deleteTask = function(idx) {
+  const el = document.getElementById(`h-${idx}`);
+  if (el) el.classList.add("removing");
+  setTimeout(() => {
+    const s = JSON.parse(JSON.stringify(state));
+    const h = s.history[idx];
+    if (!h) return;
+    const m = s.members[h.type].find(m => m.name === h.name);
+    if (m && m.tasks > 0) m.tasks--;
+    s.history.splice(idx, 1);
+    saveState(s);
+  }, 230);
+};
+
+// ── Set Type ──────────────────────────────────────────────────────────────────
+window.setType = function(type) {
+  if (!isAdmin) return;
+  const s = { ...state, currentType: type };
+  saveState(s);
+};
+
+// ── Reset ─────────────────────────────────────────────────────────────────────
+window.confirmReset = function() {
+  if (!confirm("确定要重置所有任务数据吗？成员姓名会保留。")) return;
+  const s = defaultState();
+  s.members.fe = state.members.fe.map(m => ({ ...m, tasks: 0 }));
+  s.members.be = state.members.be.map(m => ({ ...m, tasks: 0 }));
+  s.currentType = state.currentType;
+  saveState(s);
+};
+
+// ── Admin Login ───────────────────────────────────────────────────────────────
+window.toggleAdminModal = function() {
+  if (isAdmin) { isAdmin = false; render(); return; }
+  document.getElementById("pw-modal").classList.add("open");
+  setTimeout(() => document.getElementById("pw-input").focus(), 50);
+};
+window.closePwModal = function() {
+  document.getElementById("pw-modal").classList.remove("open");
+  document.getElementById("pw-input").value = "";
+  document.getElementById("pw-error").style.display = "none";
+  document.getElementById("pw-input").classList.remove("error");
+};
+window.tryLogin = function() {
+  const val = document.getElementById("pw-input").value;
+  if (val === ADMIN_PASSWORD) {
+    isAdmin = true;
+    closePwModal();
+    render();
+  } else {
+    document.getElementById("pw-error").style.display = "block";
+    document.getElementById("pw-input").classList.add("error");
+  }
+};
+document.getElementById("pw-modal").addEventListener("click", function(e) {
+  if (e.target === this) closePwModal();
+});
+
+// ── Name Edit ─────────────────────────────────────────────────────────────────
+window.openNameModal = function(type, idx) {
+  editTarget = { type, idx };
+  document.getElementById("name-modal-title").textContent = `编辑 ${type.toUpperCase()} 成员姓名`;
+  document.getElementById("name-input").value = state.members[type][idx].name;
+  document.getElementById("name-modal").classList.add("open");
+  setTimeout(() => document.getElementById("name-input").focus(), 50);
+};
+window.closeNameModal = function() {
+  document.getElementById("name-modal").classList.remove("open");
+  editTarget = null;
+};
+window.saveName = function() {
+  if (!editTarget) return;
+  const val = document.getElementById("name-input").value.trim();
+  if (!val) return;
+  const s = JSON.parse(JSON.stringify(state));
+  s.members[editTarget.type][editTarget.idx].name = val;
+  closeNameModal();
+  saveState(s);
+};
+
+// Enter to dispatch
+document.getElementById("task-input")?.addEventListener("keydown", e => {
+  if (e.key === "Enter") window.dispatchTask();
+});
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>
