@@ -425,6 +425,7 @@ let state = null;
 let isAdmin = false;
 let editTarget = null;
 let flashTimeout = null;
+let currentType = "fe"; // 本地管理，不同步到 Firebase
 
 // ── Save to Firebase ──────────────────────────────────────────────────────────
 async function saveState(newState) {
@@ -501,7 +502,7 @@ function renderAdminUI() {
 
   // Update dispatch button
   if (isAdmin) {
-    const t = state.currentType;
+    const t = currentType;
     const btn = document.getElementById("dispatch-btn");
     btn.className = "dispatch-btn " + t;
     btn.textContent = t === "fe" ? "→ 分发给前端" : t === "be" ? "→ 分发给后端" : "→ 智能分发";
@@ -518,7 +519,7 @@ function renderMembers() {
   ["fe","be"].forEach(type => {
     const grid = document.getElementById(`${type}-grid`);
     grid.innerHTML = "";
-    const t = state.currentType;
+    const t = currentType;
     state.members[type].forEach((m, idx) => {
       const isNext = t !== "any" && t === type && idx === state.pointers[type] % 5;
       const dots = Math.min(m.tasks, 20);
@@ -542,7 +543,7 @@ function renderMembers() {
 function renderQueue() {
   const strip = document.getElementById("queue-strip");
   strip.innerHTML = '<span class="queue-label">轮转顺序 →</span>';
-  const t = state.currentType;
+  const t = currentType;
   let members;
   if (t === "any") {
     const all = [...state.members.fe, ...state.members.be];
@@ -636,7 +637,7 @@ window.dispatchTask = function() {
   if (!isAdmin || !state) return;
   const taskName = document.getElementById("task-input").value.trim();
   const s = JSON.parse(JSON.stringify(state));
-  const t = s.currentType;
+  const t = currentType;
   let member;
 
   if (t === "any") {
@@ -694,11 +695,10 @@ window.deleteTask = function(idx) {
 // ── Set Type ──────────────────────────────────────────────────────────────────
 window.setType = function(type) {
   if (!isAdmin) return;
-  state = { ...state, currentType: type };
+  currentType = type;
   renderAdminUI();
   renderQueue();
   renderMembers();
-  saveState(state);
 };
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
