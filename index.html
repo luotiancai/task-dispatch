@@ -750,18 +750,13 @@ window.reassignTask = function(newMemberId, newMemberType) {
   if (oldMember.tasks > 0) oldMember.tasks--;
   newMember.tasks++;
   
-  // 调整指针：原成员回到队列前面（指针回退1），新成员延后（指针前进1）
-  const oldArr = s.members[h.type];
-  const oldIdx = oldArr.findIndex(m => m.name === h.name);
-  if (oldIdx !== -1) {
-    s.pointers[h.type] = (s.pointers[h.type] - 1 + oldArr.length) % oldArr.length;
-  }
+  // 重新排序队列：按任务数升序排列（任务少的在前）
+  s.members.fe.sort((a, b) => a.tasks - b.tasks);
+  s.members.be.sort((a, b) => a.tasks - b.tasks);
   
-  const newArr = s.members[newMemberType];
-  const newIdx = newArr.findIndex(m => m.id === newMemberId);
-  if (newIdx !== -1) {
-    s.pointers[newMemberType] = (s.pointers[newMemberType] + 1) % newArr.length;
-  }
+  // 重置指针到0（从任务最少的人开始）
+  s.pointers.fe = 0;
+  s.pointers.be = 0;
   
   // 更新历史记录
   h.name = newMember.name;
