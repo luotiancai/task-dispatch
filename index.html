@@ -573,7 +573,8 @@ function renderStats() {
   document.getElementById("stat-fe").textContent = fe;
   document.getElementById("stat-be").textContent = be;
   document.getElementById("stat-total").textContent = total;
-  document.getElementById("total-count").textContent = total;
+  const totalCountEl = document.getElementById("total-count");
+  if (totalCountEl) totalCountEl.textContent = total;
 
   if (total > 0) {
     const all = [...state.members.fe, ...state.members.be].map(m => m.tasks);
