@@ -771,6 +771,10 @@ window.reassignTask = function(newMemberId, newMemberType) {
   h.name = newMember.name;
   h.type = newMember.type;
   
+  // 立即更新全局 state 和界面
+  state = s;
+  render();
+  
   saveState(s);
   closeReassignModal();
 };
