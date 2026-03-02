@@ -44,7 +44,6 @@ header {
 }
 
 header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
-header h1 span { color: var(--highlight); }
 
 .header-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 
@@ -121,7 +120,7 @@ header h1 span { color: var(--highlight); }
 .fe .member-avatar { background: var(--fe-mid); color: var(--fe-color); }
 .be .member-avatar { background: var(--be-mid); color: var(--be-color); }
 
-.member-name { font-size: 0.76rem; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-name { font-size: 0.76rem; font-weight: 700; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.2; }
 .member-tasks { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
 .member-tasks strong { font-size: 1rem; color: var(--ink); display: block; }
 
@@ -276,13 +275,9 @@ header h1 span { color: var(--highlight); }
 <div id="app" style="display:none">
 
 <header>
-  <h1>任务分发 <span>/ DISPATCH</span></h1>
+  <h1>任务分发</h1>
   <div class="header-right">
     <span id="sync-status" class="sync-status sync-idle">☁ 云端共享</span>
-    <div class="header-meta">
-      <strong id="total-count">0</strong>
-      任务已分发
-    </div>
     <button id="admin-btn" class="admin-btn logged-out" onclick="toggleAdminModal()">管理员登录</button>
   </div>
 </header>
