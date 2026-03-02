@@ -158,7 +158,7 @@ header h1 span { color: var(--highlight); }
 .fairness-bg { background: var(--border); border-radius: 10px; height: 8px; overflow: hidden; }
 .fairness-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #e05c0a, #40c060); transition: width 0.5s ease; }
 
-.type-toggle { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 2px solid var(--border); border-radius: 6px; overflow: hidden; }
+.type-toggle { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--border); border-radius: 6px; overflow: hidden; }
 .type-btn { padding: 10px 4px; border: none; font-family: 'Syne', sans-serif; font-size: 0.73rem; font-weight: 700; cursor: pointer; background: var(--bg); color: var(--muted); transition: all 0.15s; }
 .type-btn:not(:last-child) { border-right: 1.5px solid var(--border); }
 .type-btn.active-fe { background: var(--fe-color); color: white; }
@@ -218,7 +218,7 @@ header h1 span { color: var(--highlight); }
 .h-badge.fe { background: var(--fe-color); color: white; }
 .h-badge.be { background: var(--be-color); color: white; }
 .h-who { font-weight: 700; flex: 1; }
-.h-task { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.h-task { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); }
 .h-del { background: none; border: none; cursor: pointer; color: var(--border); font-size: 0.85rem; padding: 2px 4px; border-radius: 3px; transition: all 0.15s; line-height: 1; }
 .h-del:hover { color: #c0392b; background: #fdf0ee; }
 
@@ -336,7 +336,6 @@ header h1 span { color: var(--highlight); }
     <div id="admin-controls" style="display:none; flex-direction:column; gap:12px;">
       <div class="type-toggle">
         <button class="type-btn active-fe" onclick="setType('fe')">前端 FE</button>
-        <button class="type-btn" onclick="setType('any')">任意</button>
         <button class="type-btn" onclick="setType('be')">后端 BE</button>
       </div>
       <input type="text" id="task-input" class="task-input" placeholder="任务名称（可选）" />
@@ -351,9 +350,7 @@ header h1 span { color: var(--highlight); }
     <p class="section-label" style="margin-bottom:8px">分发记录</p>
     <div class="history-list" id="history-list"></div>
 
-    <div id="admin-footer" style="display:none">
-      <button class="reset-btn" onclick="confirmReset()">↺ 重置所有数据</button>
-    </div>
+
   </div>
 
 </div>
