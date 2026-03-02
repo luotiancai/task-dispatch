@@ -129,20 +129,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .fe .task-dot { background: var(--fe-color); }
 .be .task-dot { background: var(--be-color); }
 
-.queue-strip {
-  display: flex; gap: 6px; align-items: center; margin: 18px 0 8px;
-  padding: 12px 16px; background: var(--ink); border-radius: 6; overflow-x: auto;
-}
-.queue-label { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); white-space: nowrap; letter-spacing: 1px; text-transform: uppercase; }
-.queue-item {
-  padding: 3px 9px; border-radius: 3px; font-size: 0.68rem; font-weight: 700;
-  white-space: nowrap; font-family: 'DM Mono', monospace;
-}
-.queue-item.fe { background: var(--fe-color); color: white; }
-.queue-item.be { background: var(--be-color); color: white; }
-.queue-item.current { outline: 2px solid var(--highlight); outline-offset: 1px; }
-.queue-arrow { color: var(--muted); font-size: 0.8rem; margin: 0 2px; }
-
 .stats-bar {
   display: flex; gap: 18px; margin-top: 12px; padding: 14px 18px;
   background: var(--card); border: 1.5px solid var(--border); border-radius: 6px; align-items: center;
@@ -216,7 +202,7 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .h-badge { font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; font-weight: 700; }
 .h-badge.fe { background: var(--fe-color); color: white; }
 .h-badge.be { background: var(--be-color); color: white; }
-.h-who { font-weight: 700; flex: 1; }
+.h-who { font-weight: 700; flex: 1; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.2; }
 .h-task { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); }
 .h-reassign { background: none; border: none; cursor: pointer; color: var(--border); font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; transition: all 0.15s; line-height: 1; margin-right: 2px; }
 .h-reassign:hover { color: var(--highlight); background: var(--bg); }
@@ -301,10 +287,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
       <span class="group-count" id="be-count">0 任务</span>
     </div>
     <div class="members-grid" id="be-grid"></div>
-
-    <div class="queue-strip" id="queue-strip">
-      <span class="queue-label">轮转顺序 →</span>
-    </div>
 
     <div class="stats-bar">
       <div class="stat-item fe">
@@ -498,7 +480,6 @@ async function init() {
 function render() {
   if (!state) return;
   renderMembers();
-  renderQueue();
   renderStats();
   renderHistory();
   renderAssigned();
@@ -553,40 +534,6 @@ function renderMembers() {
     const total = state.members[type].reduce((s, m) => s + m.tasks, 0);
     document.getElementById(`${type}-count`).textContent = `${total} 任务`;
   });
-}
-
-function renderQueue() {
-  const strip = document.getElementById("queue-strip");
-  strip.innerHTML = '<span class="queue-label">轮转顺序 →</span>';
-  const t = currentType;
-  let members;
-  if (t === "any") {
-    const all = [...state.members.fe, ...state.members.be];
-    const p = state.pointers.any % all.length;
-    members = [...all.slice(p), ...all.slice(0, p)];
-  } else {
-    const arr = state.members[t];
-    const p = state.pointers[t] % arr.length;
-    members = [...arr.slice(p), ...arr.slice(0, p)];
-  }
-  members.slice(0, 8).forEach((m, i) => {
-    const span = document.createElement("span");
-    span.className = `queue-item ${m.type}${i === 0 ? " current" : ""}`;
-    span.textContent = m.name;
-    strip.appendChild(span);
-    if (i < Math.min(members.length - 1, 7)) {
-      const arr = document.createElement("span");
-      arr.className = "queue-arrow";
-      arr.textContent = "›";
-      strip.appendChild(arr);
-    }
-  });
-  if (members.length > 8) {
-    const more = document.createElement("span");
-    more.className = "queue-arrow";
-    more.textContent = "···";
-    strip.appendChild(more);
-  }
 }
 
 function renderStats() {
@@ -784,7 +731,6 @@ window.setType = function(type) {
   if (!isAdmin) return;
   currentType = type;
   renderAdminUI();
-  renderQueue();
   renderMembers();
 };
 
