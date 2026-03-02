@@ -466,12 +466,21 @@ async function init() {
     if (!data) { state = defaultState(); }
     else {
       // Ensure arrays (Firebase converts arrays to objects sometimes)
+      // 保持数组顺序：如果是数组就直接用，如果是对象就转成数组
+      const feMembers = Array.isArray(data.members?.fe) 
+        ? data.members.fe.map((m,i) => ({ id: `fe${i}`, name: m.name, type: "fe", tasks: m.tasks || 0 }))
+        : Object.values(data.members?.fe || {}).map((m,i) => ({ id: `fe${i}`, name: m.name, type: "fe", tasks: m.tasks || 0 }));
+      
+      const beMembers = Array.isArray(data.members?.be)
+        ? data.members.be.map((m,i) => ({ id: `be${i}`, name: m.name, type: "be", tasks: m.tasks || 0 }))
+        : Object.values(data.members?.be || {}).map((m,i) => ({ id: `be${i}`, name: m.name, type: "be", tasks: m.tasks || 0 }));
+      
       state = {
         ...defaultState(),
         ...data,
         members: {
-          fe: Object.values(data.members?.fe || {}).map((m,i) => ({ id: `fe${i}`, name: m.name, type: "fe", tasks: m.tasks || 0 })),
-          be: Object.values(data.members?.be || {}).map((m,i) => ({ id: `be${i}`, name: m.name, type: "be", tasks: m.tasks || 0 })),
+          fe: feMembers,
+          be: beMembers,
         },
         history: data.history ? Object.values(data.history) : [],
         pointers: { fe: data.pointers?.fe || 0, be: data.pointers?.be || 0, any: data.pointers?.any || 0 },
