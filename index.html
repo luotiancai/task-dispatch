@@ -489,7 +489,8 @@ function render() {
 
 function renderAdminUI() {
   document.getElementById("admin-controls").style.display = isAdmin ? "flex" : "none";
-  document.getElementById("admin-footer").style.display = isAdmin ? "block" : "none";
+  const adminFooterEl = document.getElementById("admin-footer");
+  if (adminFooterEl) adminFooterEl.style.display = isAdmin ? "block" : "none";
   document.getElementById("dispatch-label").textContent = isAdmin ? "分发任务" : "查看模式（只读）";
   document.getElementById("team-label").textContent = isAdmin ? "开发团队 · 点击成员可编辑姓名" : "开发团队";
   document.getElementById("admin-btn").textContent = isAdmin ? "管理员 ✓" : "管理员登录";
