@@ -218,6 +218,8 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .h-badge.be { background: var(--be-color); color: white; }
 .h-who { font-weight: 700; flex: 1; }
 .h-task { font-family: 'DM Mono', monospace; font-size: 0.68rem; color: var(--muted); }
+.h-reassign { background: none; border: none; cursor: pointer; color: var(--border); font-size: 0.7rem; padding: 2px 6px; border-radius: 3px; transition: all 0.15s; line-height: 1; margin-right: 2px; }
+.h-reassign:hover { color: var(--highlight); background: var(--bg); }
 .h-del { background: none; border: none; cursor: pointer; color: var(--border); font-size: 0.85rem; padding: 2px 4px; border-radius: 3px; transition: all 0.15s; line-height: 1; }
 .h-del:hover { color: #c0392b; background: #fdf0ee; }
 
@@ -374,6 +376,18 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeNameModal()">取消</button>
       <button class="modal-save" onclick="saveName()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- REASSIGN MODAL -->
+<div class="modal-overlay" id="reassign-modal" onclick="closeReassignModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>重新分配任务</h3>
+    <p id="reassign-info" style="margin-bottom: 12px;"></p>
+    <div id="reassign-members" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;"></div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeReassignModal()">取消</button>
     </div>
   </div>
 </div>
@@ -619,6 +633,7 @@ function renderHistory() {
       <span class="h-badge ${h.type}">${h.type.toUpperCase()}</span>
       <span class="h-who">${h.name}</span>
       <span class="h-task">${h.task || "—"}</span>
+      ${isAdmin ? `<button class="h-reassign" onclick="openReassignModal(${realIdx})" title="重新分配">↻</button>` : ""}
       ${isAdmin ? `<button class="h-del" onclick="deleteTask(${realIdx})" title="删除">✕</button>` : ""}
     `;
     list.appendChild(div);
@@ -683,6 +698,77 @@ window.deleteTask = function(idx) {
     s.history.splice(idx, 1);
     saveState(s);
   }, 230);
+};
+
+// ── Reassign Task ─────────────────────────────────────────────────────────────
+let reassignTaskIdx = null;
+
+window.openReassignModal = function(idx) {
+  if (!isAdmin) return;
+  reassignTaskIdx = idx;
+  const h = state.history[idx];
+  if (!h) return;
+  
+  document.getElementById("reassign-info").textContent = `将「${h.task || "任务"}」从 ${h.name} 重新分配给：`;
+  
+  const membersDiv = document.getElementById("reassign-members");
+  membersDiv.innerHTML = "";
+  
+  const allMembers = [...state.members.fe, ...state.members.be];
+  allMembers.forEach(m => {
+    if (m.name === h.name) return; // 跳过原分配人
+    const btn = document.createElement("button");
+    btn.className = "modal-save";
+    btn.style.width = "100%";
+    btn.textContent = `${m.name} (${m.type.toUpperCase()}) - 当前 ${m.tasks} 个任务`;
+    btn.onclick = () => reassignTask(m.id, m.type);
+    membersDiv.appendChild(btn);
+  });
+  
+  document.getElementById("reassign-modal").classList.add("open");
+};
+
+window.closeReassignModal = function() {
+  document.getElementById("reassign-modal").classList.remove("open");
+  reassignTaskIdx = null;
+};
+
+window.reassignTask = function(newMemberId, newMemberType) {
+  if (!isAdmin || reassignTaskIdx === null) return;
+  
+  const s = JSON.parse(JSON.stringify(state));
+  const h = s.history[reassignTaskIdx];
+  if (!h) return;
+  
+  // 找到原成员和新成员
+  const oldMember = s.members[h.type].find(m => m.name === h.name);
+  const newMember = s.members[newMemberType].find(m => m.id === newMemberId);
+  
+  if (!oldMember || !newMember) return;
+  
+  // 调整任务数
+  if (oldMember.tasks > 0) oldMember.tasks--;
+  newMember.tasks++;
+  
+  // 调整指针：原成员回到队列前面（指针回退1），新成员延后（指针前进1）
+  const oldArr = s.members[h.type];
+  const oldIdx = oldArr.findIndex(m => m.name === h.name);
+  if (oldIdx !== -1) {
+    s.pointers[h.type] = (s.pointers[h.type] - 1 + oldArr.length) % oldArr.length;
+  }
+  
+  const newArr = s.members[newMemberType];
+  const newIdx = newArr.findIndex(m => m.id === newMemberId);
+  if (newIdx !== -1) {
+    s.pointers[newMemberType] = (s.pointers[newMemberType] + 1) % newArr.length;
+  }
+  
+  // 更新历史记录
+  h.name = newMember.name;
+  h.type = newMember.type;
+  
+  saveState(s);
+  closeReassignModal();
 };
 
 // ── Set Type ──────────────────────────────────────────────────────────────────
