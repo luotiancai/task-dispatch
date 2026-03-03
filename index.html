@@ -53,9 +53,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .sync-saved { color: #60c080; }
 .sync-error { color: #f06060; }
 
-.header-meta { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); text-align: right; }
-.header-meta strong { color: var(--highlight); display: block; font-size: 1.1rem; }
-
 .admin-btn {
   padding: 6px 14px; border-radius: 4px; font-family: 'Syne', sans-serif;
   font-size: 0.75rem; font-weight: 700; cursor: pointer; border: none; transition: all 0.15s;
@@ -92,7 +89,19 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .group-tag.be { background: var(--be-color); color: white; }
 .group-count { font-family: 'DM Mono', monospace; font-size: 0.75rem; color: var(--muted); }
 
+/* Add member button */
+.add-member-btn {
+  width: 28px; height: 28px; border-radius: 50%; border: 2px dashed var(--border);
+  background: transparent; cursor: pointer; font-size: 1rem; color: var(--muted);
+  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+  margin-left: auto; flex-shrink: 0;
+}
+.add-member-btn:hover { border-color: var(--ink); color: var(--ink); background: var(--bg); transform: scale(1.1); }
+.add-member-btn.fe:hover { border-color: var(--fe-color); color: var(--fe-color); }
+.add-member-btn.be:hover { border-color: var(--be-color); color: var(--be-color); }
+
 .members-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 8px; }
+@media (max-width: 700px) { .members-grid { grid-template-columns: repeat(3, 1fr); } }
 
 .member-card {
   background: var(--card); border: 2px solid var(--border); border-radius: 8px;
@@ -102,6 +111,17 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .member-card.be { border-color: var(--be-mid); background: var(--be-light); }
 .member-card.clickable { cursor: pointer; }
 .member-card.clickable:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+/* Delete button on card */
+.card-del-btn {
+  position: absolute; top: 4px; right: 4px; width: 16px; height: 16px;
+  border-radius: 50%; background: transparent; border: none; cursor: pointer;
+  font-size: 0.6rem; color: var(--border); display: none; align-items: center;
+  justify-content: center; transition: all 0.15s; line-height: 1;
+}
+.card-del-btn:hover { background: #fdf0ee; color: #c0392b; }
+.member-card.clickable:hover .card-del-btn,
+.card-del-btn:focus { display: flex; }
 
 @keyframes pulse-next {
   0%,100% { box-shadow: 0 0 0 0 rgba(240,232,64,0.5); }
@@ -114,6 +134,12 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
   100% { transform: scale(1); }
 }
 .just-assigned { animation: flash-assign 0.6s ease; }
+
+@keyframes card-in {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+.card-new { animation: card-in 0.25s ease; }
 
 .member-avatar {
   width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center;
@@ -150,7 +176,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .type-btn:not(:last-child) { border-right: 1.5px solid var(--border); }
 .type-btn.active-fe { background: var(--fe-color); color: white; }
 .type-btn.active-be { background: var(--be-color); color: white; }
-.type-btn.active-any { background: var(--ink); color: var(--highlight); }
 
 .task-input {
   width: 100%; padding: 11px 13px; border: 2px solid var(--border); border-radius: 6px;
@@ -165,7 +190,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 }
 .dispatch-btn.fe { background: var(--fe-color); color: white; }
 .dispatch-btn.be { background: var(--be-color); color: white; }
-.dispatch-btn.any { background: var(--ink); color: var(--highlight); }
 .dispatch-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 .dispatch-btn:active { transform: translateY(0); }
 
@@ -211,13 +235,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 
 .no-history { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); text-align: center; padding: 20px 0; }
 
-.reset-btn {
-  width: 100%; padding: 10px; background: transparent; color: var(--muted);
-  border: 1.5px solid var(--border); border-radius: 6px; font-family: 'DM Mono', monospace;
-  font-size: 0.72rem; cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px;
-}
-.reset-btn:hover { border-color: #c0392b; color: #c0392b; background: #fdf0ee; }
-
 /* MODALS */
 .modal-overlay {
   display: none; position: fixed; inset: 0; background: rgba(26,24,20,0.7);
@@ -241,6 +258,7 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .modal-actions { display: flex; gap: 10px; }
 .modal-cancel { padding: 10px 18px; background: transparent; color: var(--muted); border: 1.5px solid var(--border); border-radius: 5px; font-family: 'Syne', sans-serif; font-weight: 600; cursor: pointer; }
 .modal-save { flex: 1; padding: 10px; background: var(--ink); color: var(--highlight); border: none; border-radius: 5px; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; }
+.modal-danger { flex: 1; padding: 10px; background: #c0392b; color: white; border: none; border-radius: 5px; font-family: 'Syne', sans-serif; font-weight: 700; cursor: pointer; }
 
 /* LOADING */
 .loading-screen {
@@ -279,12 +297,14 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
     <div class="group-header">
       <span class="group-tag fe">前端 FE</span>
       <span class="group-count" id="fe-count">0 任务</span>
+      <button id="fe-add-btn" class="add-member-btn fe" onclick="openAddModal('fe')" title="添加前端成员" style="display:none">＋</button>
     </div>
     <div class="members-grid" id="fe-grid"></div>
 
     <div class="group-header" style="margin-top:24px">
       <span class="group-tag be">后端 BE</span>
       <span class="group-count" id="be-count">0 任务</span>
+      <button id="be-add-btn" class="add-member-btn be" onclick="openAddModal('be')" title="添加后端成员" style="display:none">＋</button>
     </div>
     <div class="members-grid" id="be-grid"></div>
 
@@ -329,7 +349,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
     <p class="section-label" style="margin-bottom:8px">分发记录</p>
     <div class="history-list" id="history-list"></div>
 
-
   </div>
 
 </div>
@@ -362,12 +381,37 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
   </div>
 </div>
 
+<!-- ADD MEMBER MODAL -->
+<div class="modal-overlay" id="add-modal" onclick="closeAddModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3 id="add-modal-title">添加成员</h3>
+    <p id="add-modal-desc">新成员将加入队列末尾</p>
+    <input type="text" id="add-input" class="modal-input" placeholder="输入姓名" onkeydown="if(event.key==='Enter')saveAddMember(); if(event.key==='Escape')closeAddModal();" />
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeAddModal()">取消</button>
+      <button class="modal-save" onclick="saveAddMember()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MEMBER CONFIRM MODAL -->
+<div class="modal-overlay" id="del-modal" onclick="closeDelModal()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>删除成员</h3>
+    <p id="del-modal-info">删除后该成员的任务计数将清零，历史记录保留。</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeDelModal()">取消</button>
+      <button class="modal-danger" onclick="confirmDeleteMember()">确认删除</button>
+    </div>
+  </div>
+</div>
+
 <!-- REASSIGN MODAL -->
 <div class="modal-overlay" id="reassign-modal" onclick="closeReassignModal()">
   <div class="modal-box" onclick="event.stopPropagation()">
     <h3>重新分配任务</h3>
     <p id="reassign-info" style="margin-bottom: 12px;"></p>
-    <div id="reassign-members" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px;"></div>
+    <div id="reassign-members" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; max-height: 240px; overflow-y: auto;"></div>
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeReassignModal()">取消</button>
     </div>
@@ -379,7 +423,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-// ── Firebase Config ──────────────────────────────────────────────────────────
 const firebaseConfig = {
   apiKey: "AIzaSyAJkcPg8oQYkjCwyRJ1qB79iqNq6bV_M58",
   authDomain: "task-dispatch-73aab.firebaseapp.com",
@@ -388,34 +431,29 @@ const firebaseConfig = {
   storageBucket: "task-dispatch-73aab.appspot.com",
 };
 
-// 密码在 Vercel 环境变量里，前端不存储任何密码
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const stateRef = ref(db, "dispatch/state");
 
-// ── Default State ─────────────────────────────────────────────────────────────
 function defaultState() {
   return {
     members: {
       fe: [0,1,2,3,4].map(i => ({ id: `fe${i}`, name: `前端-${i+1}`, type: "fe", tasks: 0 })),
       be: [0,1,2,3,4].map(i => ({ id: `be${i}`, name: `后端-${i+1}`, type: "be", tasks: 0 })),
     },
-    pointers: { fe: 0, be: 0, any: 0 },
+    pointers: { fe: 0, be: 0 },
     history: [],
-    currentType: "fe",
     lastAssigned: null,
   };
 }
 
-// ── Local State ───────────────────────────────────────────────────────────────
 let state = null;
 let isAdmin = false;
 let editTarget = null;
-let flashTimeout = null;
-let currentType = "fe"; // 本地管理，不同步到 Firebase
+let currentType = "fe";
+let addTarget = null; // { type }
+let delTarget = null; // { type, idx }
 
-// ── Save to Firebase ──────────────────────────────────────────────────────────
 async function saveState(newState) {
   setSyncStatus("saving");
   try {
@@ -434,39 +472,30 @@ function setSyncStatus(status) {
   el.textContent = { idle: "☁ 云端共享", saving: "⟳ 同步中…", saved: "✓ 已同步", error: "✗ 同步失败" }[status];
 }
 
-// ── Init: listen to Firebase ──────────────────────────────────────────────────
 async function init() {
   try {
     const snap = await get(stateRef);
-    if (!snap.exists()) {
-      await set(stateRef, defaultState());
-    }
+    if (!snap.exists()) await set(stateRef, defaultState());
   } catch(e) {}
 
   onValue(stateRef, (snapshot) => {
     const data = snapshot.val();
     if (!data) { state = defaultState(); }
     else {
-      // Ensure arrays (Firebase converts arrays to objects sometimes)
-      // 保持数组顺序：如果是数组就直接用，如果是对象就转成数组
-      const feMembers = Array.isArray(data.members?.fe) 
-        ? data.members.fe.map((m,i) => ({ id: `fe${i}`, name: m.name, type: "fe", tasks: m.tasks || 0 }))
-        : Object.values(data.members?.fe || {}).map((m,i) => ({ id: `fe${i}`, name: m.name, type: "fe", tasks: m.tasks || 0 }));
-      
-      const beMembers = Array.isArray(data.members?.be)
-        ? data.members.be.map((m,i) => ({ id: `be${i}`, name: m.name, type: "be", tasks: m.tasks || 0 }))
-        : Object.values(data.members?.be || {}).map((m,i) => ({ id: `be${i}`, name: m.name, type: "be", tasks: m.tasks || 0 }));
-      
+      const parseMembers = (raw, type) => {
+        if (!raw) return [];
+        const arr = Array.isArray(raw) ? raw : Object.values(raw);
+        return arr.map((m, i) => ({ id: m.id || `${type}${i}`, name: m.name, type, tasks: m.tasks || 0 }));
+      };
       state = {
         ...defaultState(),
         ...data,
         members: {
-          fe: feMembers,
-          be: beMembers,
+          fe: parseMembers(data.members?.fe, "fe"),
+          be: parseMembers(data.members?.be, "be"),
         },
-        history: data.history ? Object.values(data.history) : [],
-        pointers: { fe: data.pointers?.fe || 0, be: data.pointers?.be || 0, any: data.pointers?.any || 0 },
-        currentType: data.currentType || "fe",
+        history: data.history ? (Array.isArray(data.history) ? data.history : Object.values(data.history)) : [],
+        pointers: { fe: data.pointers?.fe || 0, be: data.pointers?.be || 0 },
         lastAssigned: data.lastAssigned || null,
       };
     }
@@ -488,23 +517,24 @@ function render() {
 
 function renderAdminUI() {
   document.getElementById("admin-controls").style.display = isAdmin ? "flex" : "none";
-  const adminFooterEl = document.getElementById("admin-footer");
-  if (adminFooterEl) adminFooterEl.style.display = isAdmin ? "block" : "none";
   document.getElementById("dispatch-label").textContent = isAdmin ? "分发任务" : "查看模式（只读）";
   document.getElementById("team-label").textContent = isAdmin ? "开发团队 · 点击成员可编辑姓名" : "开发团队";
   document.getElementById("admin-btn").textContent = isAdmin ? "管理员 ✓" : "管理员登录";
   document.getElementById("admin-btn").className = isAdmin ? "admin-btn logged-in" : "admin-btn logged-out";
+
+  // Show/hide add buttons
+  document.getElementById("fe-add-btn").style.display = isAdmin ? "flex" : "none";
+  document.getElementById("be-add-btn").style.display = isAdmin ? "flex" : "none";
+
   const hint = document.getElementById("preview-hint");
   if (hint) hint.textContent = isAdmin ? "点击分发，系统自动公平轮转" : "等待管理员分发任务…";
 
-  // Update dispatch button
   if (isAdmin) {
     const t = currentType;
     const btn = document.getElementById("dispatch-btn");
     btn.className = "dispatch-btn " + t;
-    btn.textContent = t === "fe" ? "→ 分发给前端" : t === "be" ? "→ 分发给后端" : "→ 智能分发";
+    btn.textContent = t === "fe" ? "→ 分发给前端" : "→ 分发给后端";
 
-    // Update type buttons
     const btns = document.querySelectorAll(".type-btn");
     btns[0].className = "type-btn" + (t === "fe" ? " active-fe" : "");
     btns[1].className = "type-btn" + (t === "be" ? " active-be" : "");
@@ -517,18 +547,19 @@ function renderMembers() {
     grid.innerHTML = "";
     const t = currentType;
     state.members[type].forEach((m, idx) => {
-      const isNext = t !== "any" && t === type && idx === state.pointers[type] % 5;
+      const isNext = t === type && idx === state.pointers[type] % state.members[type].length;
       const dots = Math.min(m.tasks, 20);
       const div = document.createElement("div");
       div.className = `member-card ${type}${isNext ? " next-up" : ""}${isAdmin ? " clickable" : ""}`;
       div.id = `card-${m.id}`;
-      if (isAdmin) div.onclick = () => openNameModal(type, idx);
       div.innerHTML = `
+        ${isAdmin ? `<button class="card-del-btn" onclick="openDelModal('${type}',${idx});event.stopPropagation();" title="删除成员">✕</button>` : ""}
         <div class="member-avatar">${m.name.charAt(0)}</div>
         <div class="member-name">${m.name}</div>
         <div class="member-tasks"><strong>${m.tasks}</strong>任务</div>
         <div class="task-dots">${Array(dots).fill('<div class="task-dot"></div>').join("")}</div>
       `;
+      if (isAdmin) div.onclick = () => openNameModal(type, idx);
       grid.appendChild(div);
     });
     const total = state.members[type].reduce((s, m) => s + m.tasks, 0);
@@ -543,8 +574,6 @@ function renderStats() {
   document.getElementById("stat-fe").textContent = fe;
   document.getElementById("stat-be").textContent = be;
   document.getElementById("stat-total").textContent = total;
-  const totalCountEl = document.getElementById("total-count");
-  if (totalCountEl) totalCountEl.textContent = total;
 
   if (total > 0) {
     const all = [...state.members.fe, ...state.members.be].map(m => m.tasks);
@@ -599,28 +628,16 @@ function renderHistory() {
 // ── Dispatch ──────────────────────────────────────────────────────────────────
 window.dispatchTask = function() {
   if (!isAdmin || !state) return;
+  const arr = state.members[currentType];
+  if (!arr || arr.length === 0) { alert(`${currentType === "fe" ? "前端" : "后端"}组暂无成员，请先添加成员`); return; }
+
   const taskName = document.getElementById("task-input").value.trim();
   const s = JSON.parse(JSON.stringify(state));
   const t = currentType;
-  let member;
-
-  if (t === "any") {
-    const all = [...s.members.fe, ...s.members.be];
-    const p = s.pointers.any % all.length;
-    const minTasks = Math.min(...all.map(m => m.tasks));
-    let chosen = null;
-    for (let i = 0; i < all.length; i++) {
-      const m = all[(p + i) % all.length];
-      if (m.tasks === minTasks) { chosen = m; break; }
-    }
-    member = chosen;
-    s.pointers.any = (s.pointers.any + 1) % all.length;
-  } else {
-    const arr = s.members[t];
-    const idx = s.pointers[t] % arr.length;
-    member = arr[idx];
-    s.pointers[t] = (s.pointers[t] + 1) % arr.length;
-  }
+  const members = s.members[t];
+  const idx = s.pointers[t] % members.length;
+  const member = members[idx];
+  s.pointers[t] = (s.pointers[t] + 1) % members.length;
 
   s.members[member.type].find(m => m.id === member.id).tasks++;
   if (!s.history) s.history = [];
@@ -629,7 +646,6 @@ window.dispatchTask = function() {
 
   document.getElementById("task-input").value = "";
 
-  // Flash card
   const card = document.getElementById(`card-${member.id}`);
   if (card) {
     card.classList.remove("just-assigned");
@@ -641,6 +657,57 @@ window.dispatchTask = function() {
   saveState(s);
 };
 
+// ── Add Member ────────────────────────────────────────────────────────────────
+window.openAddModal = function(type) {
+  addTarget = { type };
+  document.getElementById("add-modal-title").textContent = `添加${type === "fe" ? "前端" : "后端"}成员`;
+  document.getElementById("add-modal-desc").textContent = `新成员将加入${type === "fe" ? "前端" : "后端"}组队列末尾`;
+  document.getElementById("add-input").value = "";
+  document.getElementById("add-modal").classList.add("open");
+  setTimeout(() => document.getElementById("add-input").focus(), 50);
+};
+window.closeAddModal = function() {
+  document.getElementById("add-modal").classList.remove("open");
+  addTarget = null;
+};
+window.saveAddMember = function() {
+  if (!addTarget) return;
+  const val = document.getElementById("add-input").value.trim();
+  if (!val) return;
+  const s = JSON.parse(JSON.stringify(state));
+  const type = addTarget.type;
+  const newId = `${type}${Date.now()}`;
+  s.members[type].push({ id: newId, name: val, type, tasks: 0 });
+  closeAddModal();
+  saveState(s);
+};
+
+// ── Delete Member ─────────────────────────────────────────────────────────────
+window.openDelModal = function(type, idx) {
+  delTarget = { type, idx };
+  const m = state.members[type][idx];
+  document.getElementById("del-modal-info").textContent = `确定删除「${m.name}」？该成员有 ${m.tasks} 个任务，删除后任务计数清零，历史记录保留。`;
+  document.getElementById("del-modal").classList.add("open");
+};
+window.closeDelModal = function() {
+  document.getElementById("del-modal").classList.remove("open");
+  delTarget = null;
+};
+window.confirmDeleteMember = function() {
+  if (!delTarget) return;
+  const s = JSON.parse(JSON.stringify(state));
+  const { type, idx } = delTarget;
+  s.members[type].splice(idx, 1);
+  // Reset pointer if it's out of bounds
+  if (s.members[type].length > 0) {
+    s.pointers[type] = s.pointers[type] % s.members[type].length;
+  } else {
+    s.pointers[type] = 0;
+  }
+  closeDelModal();
+  saveState(s);
+};
+
 // ── Delete Task ───────────────────────────────────────────────────────────────
 window.deleteTask = function(idx) {
   const el = document.getElementById(`h-${idx}`);
@@ -649,7 +716,7 @@ window.deleteTask = function(idx) {
     const s = JSON.parse(JSON.stringify(state));
     const h = s.history[idx];
     if (!h) return;
-    const m = s.members[h.type].find(m => m.name === h.name);
+    const m = s.members[h.type]?.find(m => m.name === h.name);
     if (m && m.tasks > 0) m.tasks--;
     s.history.splice(idx, 1);
     saveState(s);
@@ -664,64 +731,39 @@ window.openReassignModal = function(idx) {
   reassignTaskIdx = idx;
   const h = state.history[idx];
   if (!h) return;
-  
   document.getElementById("reassign-info").textContent = `将「${h.task || "任务"}」从 ${h.name} 重新分配给：`;
-  
   const membersDiv = document.getElementById("reassign-members");
   membersDiv.innerHTML = "";
-  
   const allMembers = [...state.members.fe, ...state.members.be];
   allMembers.forEach(m => {
-    if (m.name === h.name) return; // 跳过原分配人
+    if (m.name === h.name) return;
     const btn = document.createElement("button");
     btn.className = "modal-save";
-    btn.style.width = "100%";
-    btn.textContent = `${m.name} (${m.type.toUpperCase()}) - 当前 ${m.tasks} 个任务`;
+    btn.style.cssText = "width:100%;margin-bottom:4px;font-size:0.8rem;";
+    btn.textContent = `${m.name} (${m.type.toUpperCase()}) · ${m.tasks} 个任务`;
     btn.onclick = () => reassignTask(m.id, m.type);
     membersDiv.appendChild(btn);
   });
-  
   document.getElementById("reassign-modal").classList.add("open");
 };
-
 window.closeReassignModal = function() {
   document.getElementById("reassign-modal").classList.remove("open");
   reassignTaskIdx = null;
 };
-
 window.reassignTask = function(newMemberId, newMemberType) {
   if (!isAdmin || reassignTaskIdx === null) return;
-  
   const s = JSON.parse(JSON.stringify(state));
   const h = s.history[reassignTaskIdx];
   if (!h) return;
-  
-  // 找到原成员和新成员
-  const oldMember = s.members[h.type].find(m => m.name === h.name);
-  const newMember = s.members[newMemberType].find(m => m.id === newMemberId);
-  
-  if (!oldMember || !newMember) return;
-  
-  // 调整任务数
-  if (oldMember.tasks > 0) oldMember.tasks--;
+  const oldMember = s.members[h.type]?.find(m => m.name === h.name);
+  const newMember = s.members[newMemberType]?.find(m => m.id === newMemberId);
+  if (!newMember) return;
+  if (oldMember && oldMember.tasks > 0) oldMember.tasks--;
   newMember.tasks++;
-  
-  // 重新排序队列：按任务数升序排列（任务少的在前）
-  s.members.fe.sort((a, b) => a.tasks - b.tasks);
-  s.members.be.sort((a, b) => a.tasks - b.tasks);
-  
-  // 重置指针到0（从任务最少的人开始）
-  s.pointers.fe = 0;
-  s.pointers.be = 0;
-  
-  // 更新历史记录
   h.name = newMember.name;
   h.type = newMember.type;
-  
-  // 立即更新全局 state 和界面
   state = s;
   render();
-  
   saveState(s);
   closeReassignModal();
 };
@@ -732,16 +774,6 @@ window.setType = function(type) {
   currentType = type;
   renderAdminUI();
   renderMembers();
-};
-
-// ── Reset ─────────────────────────────────────────────────────────────────────
-window.confirmReset = function() {
-  if (!confirm("确定要重置所有任务数据吗？成员姓名会保留。")) return;
-  const s = defaultState();
-  s.members.fe = state.members.fe.map(m => ({ ...m, tasks: 0 }));
-  s.members.be = state.members.be.map(m => ({ ...m, tasks: 0 }));
-  s.currentType = state.currentType;
-  saveState(s);
 };
 
 // ── Admin Login ───────────────────────────────────────────────────────────────
@@ -761,7 +793,6 @@ window.tryLogin = async function() {
   const saveBtn = document.querySelector("#pw-modal .modal-save");
   saveBtn.textContent = "验证中…";
   saveBtn.disabled = true;
-
   try {
     const res = await fetch("/api/login", {
       method: "POST",
@@ -816,7 +847,6 @@ document.getElementById("task-input")?.addEventListener("keydown", e => {
   if (e.key === "Enter") window.dispatchTask();
 });
 
-// ── Start ─────────────────────────────────────────────────────────────────────
 init();
 </script>
 </body>
