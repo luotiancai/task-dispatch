@@ -587,7 +587,7 @@ function renderMembers() {
     grid.innerHTML = "";
     const t = currentType;
     state.members[type].forEach((m, idx) => {
-      const isNext = t === type && idx === state.pointers[type] % state.members[type].length;
+      const isNext = t === type && idx === 0;
       const dots = Math.min(m.tasks, 20);
       const div = document.createElement("div");
       div.className = `member-card ${type}${isNext ? " next-up" : ""}${isAdmin ? " clickable" : ""}`;
@@ -675,12 +675,13 @@ window.dispatchTask = function() {
   const taskName = document.getElementById("task-input").value.trim();
   const s = JSON.parse(JSON.stringify(state));
   const t = currentType;
-  const members = s.members[t];
-  const idx = s.pointers[t] % members.length;
-  const member = members[idx];
-  s.pointers[t] = (s.pointers[t] + 1) % members.length;
 
-  s.members[member.type].find(m => m.id === member.id).tasks++;
+  // Always assign to index 0 (fewest tasks); re-sort after increment
+  const member = s.members[t][0];
+  s.members[t][0].tasks++;
+  // Re-sort ascending so next dispatch still picks the least-loaded person
+  s.members[t].sort((a, b) => a.tasks - b.tasks);
+
   if (!s.history) s.history = [];
   s.history.push({ name: member.name, type: member.type, task: taskName, ts: Date.now() });
   s.lastAssigned = { name: member.name, type: member.type, task: taskName };
@@ -711,6 +712,8 @@ window.dispatchDirect = function() {
   if (!member) { alert("成员不存在，请重新选择"); return; }
 
   member.tasks++;
+  // Re-sort to keep queue ordered by task count ascending
+  s.members[selectedMemberType].sort((a, b) => a.tasks - b.tasks);
   if (!s.history) s.history = [];
   s.history.push({ name: member.name, type: member.type, task: taskName, ts: Date.now(), direct: true });
   s.lastAssigned = { name: member.name, type: member.type, task: taskName };
@@ -789,6 +792,8 @@ window.deleteTask = function(idx) {
     if (!h) return;
     const m = s.members[h.type]?.find(m => m.name === h.name);
     if (m && m.tasks > 0) m.tasks--;
+    // Re-sort to keep queue consistent
+    if (s.members[h.type]) s.members[h.type].sort((a, b) => a.tasks - b.tasks);
     s.history.splice(idx, 1);
     saveState(s);
   }, 230);
