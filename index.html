@@ -171,11 +171,31 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .fairness-bg { background: var(--border); border-radius: 10px; height: 8px; overflow: hidden; }
 .fairness-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #e05c0a, #40c060); transition: width 0.5s ease; }
 
+.mode-toggle { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 2px; }
+.mode-btn { padding: 8px 4px; border: none; font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; cursor: pointer; background: var(--bg); color: var(--muted); transition: all 0.15s; }
+.mode-btn:not(:last-child) { border-right: 1.5px solid var(--border); }
+.mode-btn.active { background: var(--ink); color: var(--highlight); }
+
 .type-toggle { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--border); border-radius: 6px; overflow: hidden; }
 .type-btn { padding: 10px 4px; border: none; font-family: 'Syne', sans-serif; font-size: 0.73rem; font-weight: 700; cursor: pointer; background: var(--bg); color: var(--muted); transition: all 0.15s; }
 .type-btn:not(:last-child) { border-right: 1.5px solid var(--border); }
 .type-btn.active-fe { background: var(--fe-color); color: white; }
 .type-btn.active-be { background: var(--be-color); color: white; }
+
+/* Direct assign member picker */
+.member-picker { display: flex; flex-direction: column; gap: 6px; }
+.picker-group-label { font-family: 'DM Mono', monospace; font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+.picker-members { display: flex; flex-wrap: wrap; gap: 6px; }
+.picker-btn {
+  padding: 6px 12px; border-radius: 20px; border: 2px solid var(--border);
+  font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700;
+  cursor: pointer; background: var(--bg); color: var(--ink); transition: all 0.15s;
+}
+.picker-btn:hover { border-color: var(--ink); }
+.picker-btn.fe:hover, .picker-btn.fe.selected { background: var(--fe-light); border-color: var(--fe-color); color: var(--fe-color); }
+.picker-btn.be:hover, .picker-btn.be.selected { background: var(--be-light); border-color: var(--be-color); color: var(--be-color); }
+.picker-btn.selected { font-weight: 800; }
+.picker-none { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); }
 
 .task-input {
   width: 100%; padding: 11px 13px; border: 2px solid var(--border); border-radius: 6px;
@@ -333,12 +353,28 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
     <p class="section-label" id="dispatch-label">查看模式（只读）</p>
 
     <div id="admin-controls" style="display:none; flex-direction:column; gap:12px;">
-      <div class="type-toggle">
-        <button class="type-btn active-fe" onclick="setType('fe')">前端 FE</button>
-        <button class="type-btn" onclick="setType('be')">后端 BE</button>
+      <!-- Mode toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-auto-btn" onclick="setMode('auto')">⟳ 自动轮转</button>
+        <button class="mode-btn" id="mode-direct-btn" onclick="setMode('direct')">✎ 指定分配</button>
       </div>
-      <input type="text" id="task-input" class="task-input" placeholder="任务名称（可选）" />
-      <button id="dispatch-btn" class="dispatch-btn fe" onclick="dispatchTask()">→ 分发给前端</button>
+
+      <!-- Auto rotate mode -->
+      <div id="auto-mode-ui" style="display:flex; flex-direction:column; gap:10px;">
+        <div class="type-toggle">
+          <button class="type-btn active-fe" onclick="setType('fe')">前端 FE</button>
+          <button class="type-btn" onclick="setType('be')">后端 BE</button>
+        </div>
+        <input type="text" id="task-input" class="task-input" placeholder="任务名称（可选）" />
+        <button id="dispatch-btn" class="dispatch-btn fe" onclick="dispatchTask()">→ 分发给前端</button>
+      </div>
+
+      <!-- Direct assign mode -->
+      <div id="direct-mode-ui" style="display:none; flex-direction:column; gap:10px;">
+        <div class="member-picker" id="member-picker"></div>
+        <input type="text" id="direct-task-input" class="task-input" placeholder="任务名称（可选）" />
+        <button class="dispatch-btn" onclick="dispatchDirect()" style="background:var(--ink);color:var(--highlight);">→ 指定分配</button>
+      </div>
     </div>
 
     <div class="assigned-preview" id="assigned-preview">
@@ -451,6 +487,9 @@ let state = null;
 let isAdmin = false;
 let editTarget = null;
 let currentType = "fe";
+let dispatchMode = "auto"; // "auto" | "direct"
+let selectedMemberId = null;
+let selectedMemberType = null;
 let addTarget = null; // { type }
 let delTarget = null; // { type, idx }
 
@@ -513,6 +552,7 @@ function render() {
   renderHistory();
   renderAssigned();
   renderAdminUI();
+  if (dispatchMode === "direct") renderMemberPicker();
 }
 
 function renderAdminUI() {
@@ -618,6 +658,7 @@ function renderHistory() {
       <span class="h-badge ${h.type}">${h.type.toUpperCase()}</span>
       <span class="h-who">${h.name}</span>
       <span class="h-task">${h.task || "—"}</span>
+      ${h.direct ? `<span style="font-family:'DM Mono',monospace;font-size:0.55rem;padding:1px 5px;border-radius:2px;background:#6c5ce7;color:white;font-weight:700;">指定</span>` : ""}
       ${isAdmin ? `<button class="h-reassign" onclick="openReassignModal(${realIdx})" title="重新分配">↻</button>` : ""}
       ${isAdmin ? `<button class="h-del" onclick="deleteTask(${realIdx})" title="删除">✕</button>` : ""}
     `;
@@ -657,7 +698,37 @@ window.dispatchTask = function() {
   saveState(s);
 };
 
-// ── Add Member ────────────────────────────────────────────────────────────────
+// ── Direct Dispatch ───────────────────────────────────────────────────────────
+window.dispatchDirect = function() {
+  if (!isAdmin || !state) return;
+  if (!selectedMemberId || !selectedMemberType) {
+    alert("请先选择一个成员");
+    return;
+  }
+  const taskName = document.getElementById("direct-task-input").value.trim();
+  const s = JSON.parse(JSON.stringify(state));
+  const member = s.members[selectedMemberType]?.find(m => m.id === selectedMemberId);
+  if (!member) { alert("成员不存在，请重新选择"); return; }
+
+  member.tasks++;
+  if (!s.history) s.history = [];
+  s.history.push({ name: member.name, type: member.type, task: taskName, ts: Date.now(), direct: true });
+  s.lastAssigned = { name: member.name, type: member.type, task: taskName };
+
+  document.getElementById("direct-task-input").value = "";
+
+  const card = document.getElementById(`card-${member.id}`);
+  if (card) {
+    card.classList.remove("just-assigned");
+    void card.offsetWidth;
+    card.classList.add("just-assigned");
+    setTimeout(() => card.classList.remove("just-assigned"), 700);
+  }
+
+  saveState(s);
+};
+
+
 window.openAddModal = function(type) {
   addTarget = { type };
   document.getElementById("add-modal-title").textContent = `添加${type === "fe" ? "前端" : "后端"}成员`;
@@ -768,6 +839,50 @@ window.reassignTask = function(newMemberId, newMemberType) {
   closeReassignModal();
 };
 
+// ── Set Mode ──────────────────────────────────────────────────────────────────
+window.setMode = function(mode) {
+  dispatchMode = mode;
+  selectedMemberId = null;
+  selectedMemberType = null;
+  document.getElementById("mode-auto-btn").className = "mode-btn" + (mode === "auto" ? " active" : "");
+  document.getElementById("mode-direct-btn").className = "mode-btn" + (mode === "direct" ? " active" : "");
+  document.getElementById("auto-mode-ui").style.display = mode === "auto" ? "flex" : "none";
+  document.getElementById("direct-mode-ui").style.display = mode === "direct" ? "flex" : "none";
+  if (mode === "direct") renderMemberPicker();
+};
+
+function renderMemberPicker() {
+  const picker = document.getElementById("member-picker");
+  if (!picker || !state) return;
+  picker.innerHTML = "";
+  ["fe","be"].forEach(type => {
+    const members = state.members[type];
+    if (!members.length) return;
+    const label = document.createElement("div");
+    label.className = "picker-group-label";
+    label.textContent = type === "fe" ? "前端 FE" : "后端 BE";
+    picker.appendChild(label);
+    const row = document.createElement("div");
+    row.className = "picker-members";
+    members.forEach(m => {
+      const btn = document.createElement("button");
+      const isSelected = m.id === selectedMemberId;
+      btn.className = `picker-btn ${type}${isSelected ? " selected" : ""}`;
+      btn.textContent = `${m.name} · ${m.tasks}`;
+      btn.onclick = () => {
+        selectedMemberId = m.id;
+        selectedMemberType = m.type;
+        renderMemberPicker();
+      };
+      row.appendChild(btn);
+    });
+    picker.appendChild(row);
+  });
+  if (!state.members.fe.length && !state.members.be.length) {
+    picker.innerHTML = '<span class="picker-none">暂无成员</span>';
+  }
+}
+
 // ── Set Type ──────────────────────────────────────────────────────────────────
 window.setType = function(type) {
   if (!isAdmin) return;
@@ -845,6 +960,9 @@ window.saveName = function() {
 // Enter to dispatch
 document.getElementById("task-input")?.addEventListener("keydown", e => {
   if (e.key === "Enter") window.dispatchTask();
+});
+document.getElementById("direct-task-input")?.addEventListener("keydown", e => {
+  if (e.key === "Enter") window.dispatchDirect();
 });
 
 init();
