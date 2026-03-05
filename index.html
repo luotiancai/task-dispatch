@@ -213,18 +213,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .dispatch-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 .dispatch-btn:active { transform: translateY(0); }
 
-.assigned-preview {
-  padding: 14px; border-radius: 6px; min-height: 60px; display: flex; align-items: center;
-  justify-content: center; border: 2px dashed var(--border); transition: all 0.3s;
-}
-.assigned-preview.fe { border-color: var(--fe-color); background: var(--fe-light); }
-.assigned-preview.be { border-color: var(--be-color); background: var(--be-light); }
-.assigned-name { font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 10px; }
-.assigned-badge { font-size: 0.6rem; padding: 2px 7px; border-radius: 2px; font-weight: 700; letter-spacing: 1px; }
-.assigned-badge.fe { background: var(--fe-color); color: white; }
-.assigned-badge.be { background: var(--be-color); color: white; }
-.preview-hint { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); text-align: center; }
-
 .divider { height: 1px; background: var(--border); }
 
 .history-list { flex: 1; display: flex; flex-direction: column; gap: 5px; }
@@ -375,10 +363,6 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
         <input type="text" id="direct-task-input" class="task-input" placeholder="任务名称（可选）" />
         <button class="dispatch-btn" onclick="dispatchDirect()" style="background:var(--ink);color:var(--highlight);">→ 指定分配</button>
       </div>
-    </div>
-
-    <div class="assigned-preview" id="assigned-preview">
-      <span class="preview-hint" id="preview-hint">等待管理员分发任务…</span>
     </div>
 
     <div class="divider"></div>
@@ -550,7 +534,6 @@ function render() {
   renderMembers();
   renderStats();
   renderHistory();
-  renderAssigned();
   renderAdminUI();
   if (dispatchMode === "direct") renderMemberPicker();
 }
@@ -565,9 +548,6 @@ function renderAdminUI() {
   // Show/hide add buttons
   document.getElementById("fe-add-btn").style.display = isAdmin ? "flex" : "none";
   document.getElementById("be-add-btn").style.display = isAdmin ? "flex" : "none";
-
-  const hint = document.getElementById("preview-hint");
-  if (hint) hint.textContent = isAdmin ? "点击分发，系统自动公平轮转" : "等待管理员分发任务…";
 
   if (isAdmin) {
     const t = currentType;
@@ -626,18 +606,6 @@ function renderStats() {
   } else {
     document.getElementById("fairness-pct").textContent = "—";
     document.getElementById("fairness-bar").style.width = "0%";
-  }
-}
-
-function renderAssigned() {
-  const preview = document.getElementById("assigned-preview");
-  const la = state.lastAssigned;
-  if (la) {
-    preview.className = `assigned-preview ${la.type}`;
-    preview.innerHTML = `<div class="assigned-name"><span class="assigned-badge ${la.type}">${la.type.toUpperCase()}</span>${la.name}${la.task ? `<span style="font-size:0.8rem;font-weight:400;color:var(--muted)">· ${la.task}</span>` : ""}</div>`;
-  } else {
-    preview.className = "assigned-preview";
-    preview.innerHTML = `<span class="preview-hint" id="preview-hint">${isAdmin ? "点击分发，系统自动公平轮转" : "等待管理员分发任务…"}</span>`;
   }
 }
 
