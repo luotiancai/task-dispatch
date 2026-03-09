@@ -588,17 +588,25 @@ function renderMembers() {
 }
 
 function renderStats() {
-  const fe = state.members.fe.reduce((s, m) => s + m.tasks, 0);
-  const be = state.members.be.reduce((s, m) => s + m.tasks, 0);
+  const history = state.history || [];
+  const fe = history.filter(h => h.type === "fe").length;
+  const be = history.filter(h => h.type === "be").length;
   const total = fe + be;
   document.getElementById("stat-fe").textContent = fe;
   document.getElementById("stat-be").textContent = be;
   document.getElementById("stat-total").textContent = total;
 
   if (total > 0) {
-    const all = [...state.members.fe, ...state.members.be].map(m => m.tasks);
-    const mean = all.reduce((a,b) => a+b, 0) / all.length;
-    const variance = all.reduce((s,v) => s + Math.pow(v-mean,2), 0) / all.length;
+    // 均衡度基于每个成员在历史记录中实际被分配的次数
+    const countMap = {};
+    history.forEach(h => {
+      const key = `${h.type}:${h.name}`;
+      countMap[key] = (countMap[key] || 0) + 1;
+    });
+    const allMembers = [...state.members.fe, ...state.members.be];
+    const counts = allMembers.map(m => countMap[`${m.type}:${m.name}`] || 0);
+    const mean = counts.reduce((a,b) => a+b, 0) / counts.length;
+    const variance = counts.reduce((s,v) => s + Math.pow(v-mean,2), 0) / counts.length;
     const cv = mean > 0 ? Math.sqrt(variance) / mean : 0;
     const fairness = Math.max(0, Math.min(100, Math.round((1 - cv) * 100)));
     document.getElementById("fairness-pct").textContent = `${fairness}%`;
