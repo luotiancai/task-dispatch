@@ -634,6 +634,14 @@ function renderHistory() {
   });
 }
 
+// ── Round normalization ───────────────────────────────────────────────────────
+function checkRound(s, type) {
+  const members = s.members[type];
+  if (members.length > 0 && members.every(m => m.tasks >= 1)) {
+    members.forEach(m => m.tasks--);
+  }
+}
+
 // ── Dispatch ──────────────────────────────────────────────────────────────────
 window.dispatchTask = function() {
   if (!isAdmin || !state) return;
@@ -647,6 +655,7 @@ window.dispatchTask = function() {
   // Always assign to index 0 (fewest tasks); re-sort after increment
   const member = s.members[t][0];
   s.members[t][0].tasks++;
+  checkRound(s, t);
   // Re-sort ascending so next dispatch still picks the least-loaded person
   s.members[t].sort((a, b) => a.tasks - b.tasks);
 
@@ -680,6 +689,7 @@ window.dispatchDirect = function() {
   if (!member) { alert("成员不存在，请重新选择"); return; }
 
   member.tasks++;
+  checkRound(s, selectedMemberType);
   // Re-sort to keep queue ordered by task count ascending
   s.members[selectedMemberType].sort((a, b) => a.tasks - b.tasks);
   if (!s.history) s.history = [];
