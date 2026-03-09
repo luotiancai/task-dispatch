@@ -576,7 +576,7 @@ function renderMembers() {
         ${isAdmin ? `<button class="card-del-btn" onclick="openDelModal('${type}',${idx});event.stopPropagation();" title="删除成员">✕</button>` : ""}
         <div class="member-avatar">${m.name.charAt(0)}</div>
         <div class="member-name">${m.name}</div>
-        <div class="member-tasks"><strong>${m.tasks}</strong>任务</div>
+        <div class="member-tasks"><strong>${m.tasks}</strong>轮</div>
         <div class="task-dots">${Array(dots).fill('<div class="task-dot"></div>').join("")}</div>
       `;
       if (isAdmin) div.onclick = () => openNameModal(type, idx);
