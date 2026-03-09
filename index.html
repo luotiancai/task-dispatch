@@ -8,18 +8,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg: #f5f2eb;
-  --ink: #1a1814;
-  --muted: #8a8578;
-  --fe-color: #c8440a;
-  --be-color: #1a5c8a;
-  --fe-light: #fdf0ea;
-  --be-light: #e8f2fa;
-  --fe-mid: #f0c4b0;
-  --be-mid: #aecde6;
-  --border: #d8d4cc;
+  --bg: #f1f5f9;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --fe-color: #6366f1;
+  --be-color: #10b981;
+  --fe-light: #eef2ff;
+  --be-light: #ecfdf5;
+  --fe-mid: #c7d2fe;
+  --be-mid: #a7f3d0;
+  --border: #e2e8f0;
   --card: #ffffff;
-  --highlight: #f0e840;
+  --highlight: #fbbf24;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -124,8 +124,8 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .card-del-btn:focus { display: flex; }
 
 @keyframes pulse-next {
-  0%,100% { box-shadow: 0 0 0 0 rgba(240,232,64,0.5); }
-  50% { box-shadow: 0 0 0 6px rgba(240,232,64,0); }
+  0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(251,191,36,0); }
 }
 .next-up { outline: 3px solid var(--highlight); outline-offset: 1px; animation: pulse-next 1.5s ease-in-out infinite; }
 
@@ -169,7 +169,7 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .fairness-wrap { flex: 1; }
 .fairness-lbl { display: flex; justify-content: space-between; font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); margin-bottom: 4px; }
 .fairness-bg { background: var(--border); border-radius: 10px; height: 8px; overflow: hidden; }
-.fairness-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #e05c0a, #40c060); transition: width 0.5s ease; }
+.fairness-fill { height: 100%; border-radius: 10px; background: linear-gradient(90deg, #f87171, #34d399); transition: width 0.5s ease; }
 
 .mode-toggle { display: grid; grid-template-columns: 1fr 1fr; border: 2px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 2px; }
 .mode-btn { padding: 8px 4px; border: none; font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; cursor: pointer; background: var(--bg); color: var(--muted); transition: all 0.15s; }
