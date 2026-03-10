@@ -19,16 +19,20 @@ export default function DispatchPanel({
   onOpenReassignModal,
 }) {
   const [taskInput, setTaskInput] = useState('');
+  const [contribution, setContribution] = useState(1);
   const [directTaskInput, setDirectTaskInput] = useState('');
+  const [directContribution, setDirectContribution] = useState(1);
 
   const handleDispatch = () => {
-    onDispatchTask(taskInput.trim());
+    onDispatchTask(taskInput.trim(), Number(contribution) || 1);
     setTaskInput('');
+    setContribution(1);
   };
 
   const handleDispatchDirect = () => {
-    onDispatchDirect(directTaskInput.trim());
+    onDispatchDirect(directTaskInput.trim(), Number(directContribution) || 1);
     setDirectTaskInput('');
+    setDirectContribution(1);
   };
 
   return (
@@ -80,6 +84,16 @@ export default function DispatchPanel({
                 onChange={e => setTaskInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleDispatch(); }}
               />
+              <input
+                type="number"
+                className="task-input"
+                placeholder="贡献值（默认 1）"
+                min="0.1"
+                step="0.5"
+                value={contribution}
+                onChange={e => setContribution(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleDispatch(); }}
+              />
               <button
                 className={`dispatch-btn ${currentType}`}
                 onClick={handleDispatch}
@@ -103,6 +117,16 @@ export default function DispatchPanel({
                 placeholder="任务名称（可选）"
                 value={directTaskInput}
                 onChange={e => setDirectTaskInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleDispatchDirect(); }}
+              />
+              <input
+                type="number"
+                className="task-input"
+                placeholder="贡献值（默认 1）"
+                min="0.1"
+                step="0.5"
+                value={directContribution}
+                onChange={e => setDirectContribution(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') handleDispatchDirect(); }}
               />
               <button

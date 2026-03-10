@@ -28,6 +28,17 @@ export default function HistoryList({
           <span className={`h-badge ${h.type}`}>{h.type.toUpperCase()}</span>
           <span className="h-who">{h.name}</span>
           <span className="h-task">{h.task || '—'}</span>
+          <span style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: '0.55rem',
+            padding: '1px 5px',
+            borderRadius: '2px',
+            background: 'var(--highlight)',
+            color: 'var(--ink)',
+            fontWeight: 700,
+          }}>
+            +{h.contribution || 1}
+          </span>
           {h.direct && (
             <span style={{
               fontFamily: "'DM Mono', monospace",

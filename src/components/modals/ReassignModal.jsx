@@ -21,7 +21,7 @@ export default function ReassignModal({ open, taskIdx, state, onClose, onReassig
               style={{ width: '100%', marginBottom: 4, fontSize: '0.8rem' }}
               onClick={() => onReassign(m.id, m.type)}
             >
-              {m.name} ({m.type.toUpperCase()}) · {m.tasks} 个任务
+              {m.name} ({m.type.toUpperCase()}) · {m.contribution ?? 0} 贡献
             </button>
           ))}
         </div>

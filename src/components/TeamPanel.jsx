@@ -14,14 +14,14 @@ export default function TeamPanel({
 
   const renderGroup = (type) => {
     const members = state.members[type] || [];
-    const total = members.reduce((s, m) => s + m.tasks, 0);
+    const total = Math.round(members.reduce((s, m) => s + (m.contribution ?? 0), 0) * 100) / 100;
     const label = type === 'fe' ? '前端 FE' : '后端 BE';
 
     return (
       <>
         <div className="group-header" style={type === 'be' ? { marginTop: 24 } : undefined}>
           <span className={`group-tag ${type}`}>{label}</span>
-          <span className="group-count">{total} 任务</span>
+          <span className="group-count">{total} 贡献</span>
           {isAdmin && (
             <button
               className={`add-member-btn ${type}`}

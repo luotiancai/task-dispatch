@@ -23,7 +23,7 @@ export default function MemberPicker({ state, selectedMemberId, onSelect }) {
                   className={`picker-btn ${type}${m.id === selectedMemberId ? ' selected' : ''}`}
                   onClick={() => onSelect(m.id, m.type)}
                 >
-                  {m.name} · {m.tasks}
+                  {m.name} · {m.contribution ?? 0}
                 </button>
               ))}
             </div>

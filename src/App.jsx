@@ -15,8 +15,8 @@ const stateRef = ref(db, 'dispatch/state');
 function defaultState() {
   return {
     members: {
-      fe: [0, 1, 2, 3, 4].map(i => ({ id: `fe${i}`, name: `前端-${i + 1}`, type: 'fe', tasks: 0 })),
-      be: [0, 1, 2, 3, 4].map(i => ({ id: `be${i}`, name: `后端-${i + 1}`, type: 'be', tasks: 0 })),
+      fe: [0, 1, 2, 3, 4].map(i => ({ id: `fe${i}`, name: `前端-${i + 1}`, type: 'fe', contribution: 0 })),
+      be: [0, 1, 2, 3, 4].map(i => ({ id: `be${i}`, name: `后端-${i + 1}`, type: 'be', contribution: 0 })),
     },
     pointers: { fe: 0, be: 0 },
     history: [],
@@ -24,10 +24,12 @@ function defaultState() {
   };
 }
 
-function checkRound(s, type) {
+function normalizeContributions(s, type) {
   const members = s.members[type];
-  if (members.length > 0 && members.every(m => m.tasks >= 1)) {
-    members.forEach(m => m.tasks--);
+  if (members.length === 0) return;
+  const minC = Math.min(...members.map(m => m.contribution));
+  if (minC > 0) {
+    members.forEach(m => { m.contribution = Math.round((m.contribution - minC) * 100) / 100; });
   }
 }
 
@@ -95,7 +97,7 @@ export default function App() {
           const parseMembers = (raw, type) => {
             if (!raw) return [];
             const arr = Array.isArray(raw) ? raw : Object.values(raw);
-            return arr.map((m, i) => ({ id: m.id || `${type}${i}`, name: m.name, type, tasks: m.tasks || 0 }));
+            return arr.map((m, i) => ({ id: m.id || `${type}${i}`, name: m.name, type, contribution: m.contribution ?? m.tasks ?? 0 }));
           };
           parsed = {
             ...defaultState(),
@@ -126,7 +128,7 @@ export default function App() {
   }, []);
 
   // Dispatch auto (assign to index 0 = least loaded)
-  const dispatchTask = useCallback((taskName) => {
+  const dispatchTask = useCallback((taskName, contribution) => {
     if (!isAdmin || !state) return;
     const arr = state.members[currentType];
     if (!arr || arr.length === 0) {
@@ -137,12 +139,12 @@ export default function App() {
     const s = JSON.parse(JSON.stringify(state));
     const t = currentType;
     const member = s.members[t][0];
-    s.members[t][0].tasks++;
-    checkRound(s, t);
-    s.members[t].sort((a, b) => a.tasks - b.tasks);
+    s.members[t][0].contribution = Math.round((s.members[t][0].contribution + contribution) * 100) / 100;
+    normalizeContributions(s, t);
+    s.members[t].sort((a, b) => a.contribution - b.contribution);
 
     if (!s.history) s.history = [];
-    s.history.push({ name: member.name, type: member.type, task: taskName, ts: Date.now() });
+    s.history.push({ name: member.name, type: member.type, task: taskName, contribution, ts: Date.now() });
     s.lastAssigned = { name: member.name, type: member.type, task: taskName };
 
     setJustAssignedId(member.id);
@@ -152,7 +154,7 @@ export default function App() {
   }, [isAdmin, state, currentType, saveState]);
 
   // Dispatch direct (assign to specific member)
-  const dispatchDirect = useCallback((taskName) => {
+  const dispatchDirect = useCallback((taskName, contribution) => {
     if (!isAdmin || !state) return;
     if (!selectedMemberId || !selectedMemberType) {
       alert('请先选择一个成员');
@@ -162,12 +164,12 @@ export default function App() {
     const member = s.members[selectedMemberType]?.find(m => m.id === selectedMemberId);
     if (!member) { alert('成员不存在，请重新选择'); return; }
 
-    member.tasks++;
-    checkRound(s, selectedMemberType);
-    s.members[selectedMemberType].sort((a, b) => a.tasks - b.tasks);
+    member.contribution = Math.round((member.contribution + contribution) * 100) / 100;
+    normalizeContributions(s, selectedMemberType);
+    s.members[selectedMemberType].sort((a, b) => a.contribution - b.contribution);
 
     if (!s.history) s.history = [];
-    s.history.push({ name: member.name, type: member.type, task: taskName, ts: Date.now(), direct: true });
+    s.history.push({ name: member.name, type: member.type, task: taskName, contribution, ts: Date.now(), direct: true });
     s.lastAssigned = { name: member.name, type: member.type, task: taskName };
 
     setJustAssignedId(member.id);
@@ -185,8 +187,8 @@ export default function App() {
       const h = s.history[idx];
       if (!h) return;
       const m = s.members[h.type]?.find(m => m.name === h.name);
-      if (m && m.tasks > 0) m.tasks--;
-      if (s.members[h.type]) s.members[h.type].sort((a, b) => a.tasks - b.tasks);
+      if (m) m.contribution = Math.max(0, Math.round((m.contribution - (h.contribution || 1)) * 100) / 100);
+      if (s.members[h.type]) s.members[h.type].sort((a, b) => a.contribution - b.contribution);
       s.history.splice(idx, 1);
       saveState(s);
     }, 230);
@@ -201,8 +203,9 @@ export default function App() {
     const oldMember = s.members[h.type]?.find(m => m.name === h.name);
     const newMember = s.members[newMemberType]?.find(m => m.id === newMemberId);
     if (!newMember) return;
-    if (oldMember && oldMember.tasks > 0) oldMember.tasks--;
-    newMember.tasks++;
+    const c = h.contribution || 1;
+    if (oldMember) oldMember.contribution = Math.max(0, Math.round((oldMember.contribution - c) * 100) / 100);
+    newMember.contribution = Math.round((newMember.contribution + c) * 100) / 100;
     h.name = newMember.name;
     h.type = newMember.type;
     saveState(s);
@@ -216,7 +219,7 @@ export default function App() {
     const s = JSON.parse(JSON.stringify(state));
     const type = addModalTarget.type;
     const newId = `${type}${Date.now()}`;
-    s.members[type].push({ id: newId, name, type, tasks: 0 });
+    s.members[type].push({ id: newId, name, type, contribution: 0 });
     setAddModalOpen(false);
     setAddModalTarget(null);
     saveState(s);
