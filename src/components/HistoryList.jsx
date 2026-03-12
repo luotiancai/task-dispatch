@@ -6,18 +6,24 @@ export default function HistoryList({
   removingIdx,
   onDeleteTask,
   onOpenReassignModal,
+  onOpenEditContribModal,
 }) {
   const [expandedSet, setExpandedSet] = useState(new Set());
+  const [page, setPage] = useState(0);
   const history = state?.history || [];
 
   if (history.length === 0) {
     return <p className="no-history">暂无记录</p>;
   }
 
-  const items = [...history].reverse().slice(0, 30).map((h, i) => {
-    const realIdx = history.length - 1 - i;
-    return { h, realIdx };
-  });
+  const PAGE_SIZE = 5;
+  const reversed = [...history].reverse().map((h, i) => ({
+    h,
+    realIdx: history.length - 1 - i,
+  }));
+  const totalPages = Math.ceil(reversed.length / PAGE_SIZE);
+  const safePage = Math.min(page, totalPages - 1);
+  const items = reversed.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
   const toggleExpand = (idx) => {
     setExpandedSet(prev => {
@@ -43,7 +49,12 @@ export default function HistoryList({
               <span className="h-idx">{realIdx + 1}</span>
               <span className={`h-badge ${h.type}`}>{h.type.toUpperCase()}</span>
               <span className="h-who">{h.name}</span>
-              <span className="h-contrib">+{h.contribution || 1}</span>
+              <span
+                className="h-contrib"
+                style={isAdmin ? { cursor: 'pointer', textDecoration: 'underline dotted' } : {}}
+                onClick={isAdmin ? () => onOpenEditContribModal(realIdx) : undefined}
+                title={isAdmin ? '点击修改贡献值' : undefined}
+              >+{h.contribution ?? 1}</span>
               {h.direct && <span className="h-direct">指定</span>}
               <span style={{ flex: 1 }} />
               {isAdmin && (
@@ -76,6 +87,21 @@ export default function HistoryList({
           </div>
         );
       })}
+      {totalPages > 1 && (
+        <div className="h-pagination">
+          <button
+            className="h-page-btn"
+            onClick={() => setPage(p => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+          >‹</button>
+          <span className="h-page-info">{safePage + 1} / {totalPages}</span>
+          <button
+            className="h-page-btn"
+            onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+            disabled={safePage === totalPages - 1}
+          >›</button>
+        </div>
+      )}
     </>
   );
 }

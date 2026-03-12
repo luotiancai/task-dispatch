@@ -17,6 +17,7 @@ export default function DispatchPanel({
   onDispatchDirect,
   onDeleteTask,
   onOpenReassignModal,
+  onOpenEditContribModal,
 }) {
   const [taskInput, setTaskInput] = useState('');
   const [contribution, setContribution] = useState(1);
@@ -150,6 +151,7 @@ export default function DispatchPanel({
           removingIdx={removingIdx}
           onDeleteTask={onDeleteTask}
           onOpenReassignModal={onOpenReassignModal}
+          onOpenEditContribModal={onOpenEditContribModal}
         />
       </div>
     </div>

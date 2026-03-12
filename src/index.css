@@ -245,6 +245,12 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 
 .no-history { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); text-align: center; padding: 20px 0; }
 
+.h-pagination { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 0 4px; }
+.h-page-btn { background: none; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; color: var(--ink); font-size: 1rem; line-height: 1; padding: 2px 10px; transition: all 0.15s; }
+.h-page-btn:hover:not(:disabled) { background: var(--highlight); border-color: var(--highlight); color: white; }
+.h-page-btn:disabled { opacity: 0.3; cursor: default; }
+.h-page-info { font-family: 'DM Mono', monospace; font-size: 0.65rem; color: var(--muted); }
+
 /* MODALS */
 .modal-overlay {
   display: none; position: fixed; inset: 0; background: rgba(26,24,20,0.7);

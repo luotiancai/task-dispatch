@@ -9,6 +9,7 @@ import NameModal from './components/modals/NameModal';
 import AddModal from './components/modals/AddModal';
 import DeleteModal from './components/modals/DeleteModal';
 import ReassignModal from './components/modals/ReassignModal';
+import EditContribModal from './components/modals/EditContribModal';
 
 const stateRef = ref(db, 'dispatch/state');
 
@@ -53,6 +54,8 @@ export default function App() {
   const [deleteModalTarget, setDeleteModalTarget] = useState(null); // { type, idx }
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
   const [reassignTaskIdx, setReassignTaskIdx] = useState(null);
+  const [editContribModalOpen, setEditContribModalOpen] = useState(false);
+  const [editContribTaskIdx, setEditContribTaskIdx] = useState(null);
 
   // For flash animation on cards
   const [justAssignedId, setJustAssignedId] = useState(null);
@@ -213,6 +216,24 @@ export default function App() {
     setReassignTaskIdx(null);
   }, [isAdmin, reassignTaskIdx, state, saveState]);
 
+  // Edit contribution value of a history entry
+  const editContrib = useCallback((newContrib) => {
+    if (!isAdmin || editContribTaskIdx === null || !state) return;
+    const s = JSON.parse(JSON.stringify(state));
+    const h = s.history[editContribTaskIdx];
+    if (!h) return;
+    const oldC = h.contribution ?? 1;
+    const diff = newContrib - oldC;
+    const member = s.members[h.type]?.find(m => m.name === h.name);
+    if (member) {
+      member.contribution = Math.max(0, Math.round((member.contribution + diff) * 100) / 100);
+    }
+    h.contribution = newContrib;
+    saveState(s);
+    setEditContribModalOpen(false);
+    setEditContribTaskIdx(null);
+  }, [isAdmin, editContribTaskIdx, state, saveState]);
+
   // Add member
   const addMember = useCallback((name) => {
     if (!addModalTarget) return;
@@ -295,6 +316,11 @@ export default function App() {
     setReassignModalOpen(true);
   }, []);
 
+  const openEditContribModal = useCallback((idx) => {
+    setEditContribTaskIdx(idx);
+    setEditContribModalOpen(true);
+  }, []);
+
   if (loading) {
     return (
       <div className="loading-screen">
@@ -343,6 +369,7 @@ export default function App() {
           onDispatchDirect={dispatchDirect}
           onDeleteTask={deleteTask}
           onOpenReassignModal={openReassignModal}
+          onOpenEditContribModal={openEditContribModal}
         />
       </div>
 
@@ -377,6 +404,13 @@ export default function App() {
         state={state}
         onClose={() => { setReassignModalOpen(false); setReassignTaskIdx(null); }}
         onReassign={reassignTask}
+      />
+      <EditContribModal
+        open={editContribModalOpen}
+        taskIdx={editContribTaskIdx}
+        state={state}
+        onClose={() => { setEditContribModalOpen(false); setEditContribTaskIdx(null); }}
+        onSave={editContrib}
       />
     </>
   );
