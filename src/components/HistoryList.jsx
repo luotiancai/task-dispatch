@@ -49,14 +49,18 @@ export default function HistoryList({
               <span className="h-idx">{realIdx + 1}</span>
               <span className={`h-badge ${h.type}`}>{h.type.toUpperCase()}</span>
               <span className="h-who">{h.name}</span>
-              <span
-                className="h-contrib"
-                style={isAdmin ? { cursor: 'pointer', textDecoration: 'underline dotted' } : {}}
-                onClick={isAdmin ? () => onOpenEditContribModal(realIdx) : undefined}
-                title={isAdmin ? '点击修改贡献值' : undefined}
-              >+{h.contribution ?? 1}</span>
+              <span className="h-contrib">+{h.contribution ?? 1}</span>
               {h.direct && <span className="h-direct">指定</span>}
               <span style={{ flex: 1 }} />
+              {isAdmin && (
+                <button
+                  className="h-edit-contrib"
+                  onClick={() => onOpenEditContribModal(realIdx)}
+                  title="修改贡献值"
+                >
+                  ✎
+                </button>
+              )}
               {isAdmin && (
                 <button
                   className="h-reassign"
