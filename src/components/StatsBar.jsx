@@ -1,50 +1,35 @@
+const MEDALS = ['🥇', '🥈', '🥉'];
+
 export default function StatsBar({ state }) {
-  const history = state?.history || [];
-  const fe = Math.round(history.filter(h => h.type === 'fe').reduce((s, h) => s + (h.contribution || 1), 0) * 100) / 100;
-  const be = Math.round(history.filter(h => h.type === 'be').reduce((s, h) => s + (h.contribution || 1), 0) * 100) / 100;
-  const total = Math.round((fe + be) * 100) / 100;
+  const allMembers = [
+    ...(state?.members?.fe || []),
+    ...(state?.members?.be || []),
+  ];
 
-  let fairnessPct = '—';
-  let fairnessWidth = '0%';
+  if (allMembers.length === 0) return null;
 
-  if (total > 0) {
-    const contribMap = {};
-    history.forEach(h => {
-      const key = `${h.type}:${h.name}`;
-      contribMap[key] = (contribMap[key] || 0) + (h.contribution || 1);
-    });
-    const allMembers = [...(state.members.fe || []), ...(state.members.be || [])];
-    const contribs = allMembers.map(m => contribMap[`${m.type}:${m.name}`] || 0);
-    const mean = contribs.reduce((a, b) => a + b, 0) / contribs.length;
-    const variance = contribs.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / contribs.length;
-    const cv = mean > 0 ? Math.sqrt(variance) / mean : 0;
-    const fairness = Math.max(0, Math.min(100, Math.round((1 - cv) * 100)));
-    fairnessPct = `${fairness}%`;
-    fairnessWidth = `${fairness}%`;
-  }
+  const sorted = [...allMembers].sort((a, b) => (b.contribution ?? 0) - (a.contribution ?? 0));
+  const max = sorted[0]?.contribution ?? 0;
 
   return (
-    <div className="stats-bar">
-      <div className="stat-item fe">
-        <span className="stat-num">{fe}</span>
-        <span className="stat-lbl">前端贡献</span>
-      </div>
-      <div className="stat-item be">
-        <span className="stat-num">{be}</span>
-        <span className="stat-lbl">后端贡献</span>
-      </div>
-      <div className="stat-item">
-        <span className="stat-num" style={{ color: 'var(--ink)' }}>{total}</span>
-        <span className="stat-lbl">总贡献</span>
-      </div>
-      <div className="fairness-wrap">
-        <div className="fairness-lbl">
-          <span>均衡度</span>
-          <span>{fairnessPct}</span>
-        </div>
-        <div className="fairness-bg">
-          <div className="fairness-fill" style={{ width: fairnessWidth }} />
-        </div>
+    <div className="leaderboard">
+      <div className="leaderboard-title">贡献排名</div>
+      <div className="leaderboard-list">
+        {sorted.map((m, i) => {
+          const c = m.contribution ?? 0;
+          const pct = max > 0 ? (c / max) * 100 : 0;
+          return (
+            <div key={m.id} className="lb-row">
+              <span className="lb-rank">{i < 3 ? MEDALS[i] : i + 1}</span>
+              <span className={`lb-badge ${m.type}`}>{m.type.toUpperCase()}</span>
+              <span className="lb-name">{m.name}</span>
+              <div className="lb-bar-wrap">
+                <div className="lb-bar-fill" style={{ width: `${pct}%`, background: m.type === 'fe' ? 'var(--fe-color)' : 'var(--be-color)' }} />
+              </div>
+              <span className="lb-score">{c}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
