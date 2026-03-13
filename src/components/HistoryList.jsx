@@ -16,7 +16,7 @@ export default function HistoryList({
     return <p className="no-history">暂无记录</p>;
   }
 
-  const PAGE_SIZE = 5;
+  const PAGE_SIZE = 10;
   const reversed = [...history].reverse().map((h, i) => ({
     h,
     realIdx: history.length - 1 - i,
