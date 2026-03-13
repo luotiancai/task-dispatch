@@ -8,15 +8,23 @@ export default function StatsBar({ state }) {
 
   if (allMembers.length === 0) return null;
 
-  const sorted = [...allMembers].sort((a, b) => (b.contribution ?? 0) - (a.contribution ?? 0));
-  const max = sorted[0]?.contribution ?? 0;
+  const histMap = {};
+  (state?.history || []).forEach(h => {
+    const key = `${h.type}:${h.name}`;
+    histMap[key] = (histMap[key] || 0) + (h.contribution ?? 1);
+  });
+
+  const sorted = [...allMembers]
+    .map(m => ({ ...m, total: Math.round((histMap[`${m.type}:${m.name}`] || 0) * 100) / 100 }))
+    .sort((a, b) => b.total - a.total);
+  const max = sorted[0]?.total ?? 0;
 
   return (
     <div className="leaderboard">
       <div className="leaderboard-title">贡献排名</div>
       <div className="leaderboard-list">
         {sorted.map((m, i) => {
-          const c = m.contribution ?? 0;
+          const c = m.total;
           const pct = max > 0 ? (c / max) * 100 : 0;
           return (
             <div key={m.id} className="lb-row">
