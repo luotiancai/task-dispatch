@@ -8,8 +8,9 @@ export default function StatsBar({ state }) {
 
   if (allMembers.length === 0) return null;
 
+  const oneMonthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const histMap = {};
-  (state?.history || []).forEach(h => {
+  (state?.history || []).filter(h => (h.ts ?? 0) >= oneMonthAgo).forEach(h => {
     const key = `${h.type}:${h.name}`;
     histMap[key] = (histMap[key] || 0) + (h.contribution ?? 1);
   });
@@ -21,7 +22,7 @@ export default function StatsBar({ state }) {
 
   return (
     <div className="leaderboard">
-      <div className="leaderboard-title">贡献排名</div>
+      <div className="leaderboard-title">贡献排名（近30天）</div>
       <div className="leaderboard-list">
         {sorted.map((m, i) => {
           const c = m.total;
