@@ -10,17 +10,17 @@ export default function HistoryList({
 }) {
   const [expandedSet, setExpandedSet] = useState(new Set());
   const [page, setPage] = useState(0);
+  const [filterName, setFilterName] = useState('');
   const history = state?.history || [];
 
-  if (history.length === 0) {
-    return <p className="no-history">暂无记录</p>;
-  }
+  const allNames = [...new Set(history.map(h => h.name))].sort((a, b) => a.localeCompare(b));
 
   const PAGE_SIZE = 10;
   const reversed = [...history].reverse().map((h, i) => ({
     h,
     realIdx: history.length - 1 - i,
-  }));
+  })).filter(({ h }) => !filterName || h.name === filterName);
+
   const totalPages = Math.ceil(reversed.length / PAGE_SIZE);
   const safePage = Math.min(page, totalPages - 1);
   const items = reversed.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
@@ -35,6 +35,20 @@ export default function HistoryList({
 
   return (
     <>
+      {allNames.length > 0 && (
+        <div className="h-filter">
+          <select
+            value={filterName}
+            onChange={e => { setFilterName(e.target.value); setPage(0); }}
+          >
+            <option value="">全部人员</option>
+            {allNames.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+      {items.length === 0 && <p className="no-history">暂无记录</p>}
       {items.map(({ h, realIdx }) => {
         const expanded = expandedSet.has(realIdx);
         const taskText = h.task || '—';
