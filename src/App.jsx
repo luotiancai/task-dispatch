@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ref, onValue, set, get } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import { db } from './firebase';
 import Header from './components/Header';
 import TeamPanel from './components/TeamPanel';
@@ -64,6 +64,7 @@ export default function App() {
   const [removingIdx, setRemovingIdx] = useState(null);
 
   const syncTimerRef = useRef(null);
+  const adminPasswordRef = useRef(null);
 
   const updateSyncStatus = useCallback((status) => {
     setSyncStatus(status);
@@ -76,7 +77,12 @@ export default function App() {
   const saveState = useCallback(async (newState) => {
     updateSyncStatus('saving');
     try {
-      await set(stateRef, newState);
+      const res = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: adminPasswordRef.current, state: newState }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       updateSyncStatus('saved');
     } catch (e) {
       updateSyncStatus('error');
@@ -85,49 +91,51 @@ export default function App() {
   }, [updateSyncStatus]);
 
   useEffect(() => {
-    async function init() {
-      try {
-        const snap = await get(stateRef);
-        if (!snap.exists()) await set(stateRef, defaultState());
-      } catch (e) {}
-
-      const unsubscribe = onValue(stateRef, (snapshot) => {
-        const data = snapshot.val();
-        let parsed;
-        if (!data) {
-          parsed = defaultState();
-        } else {
-          const parseMembers = (raw, type) => {
-            if (!raw) return [];
-            const arr = Array.isArray(raw) ? raw : Object.values(raw);
-            return arr.map((m, i) => ({ id: m.id || `${type}${i}`, name: m.name, type, contribution: m.contribution ?? m.tasks ?? 0 }));
-          };
-          parsed = {
-            ...defaultState(),
-            ...data,
-            members: {
-              fe: parseMembers(data.members?.fe, 'fe'),
-              be: parseMembers(data.members?.be, 'be'),
-            },
-            history: data.history
-              ? Array.isArray(data.history)
-                ? data.history
-                : Object.values(data.history)
-              : [],
-            pointers: { fe: data.pointers?.fe || 0, be: data.pointers?.be || 0 },
-            lastAssigned: data.lastAssigned || null,
-          };
-        }
-        setState(parsed);
-        setLoading(false);
+    const timeoutId = setTimeout(() => {
+      setLoading(prev => {
+        if (prev) setState(s => s || defaultState());
+        return false;
       });
+    }, 10000);
 
-      return unsubscribe;
-    }
+    const unsubscribe = onValue(stateRef, (snapshot) => {
+      clearTimeout(timeoutId);
+      const data = snapshot.val();
+      let parsed;
+      if (!data) {
+        parsed = defaultState();
+      } else {
+        const parseMembers = (raw, type) => {
+          if (!raw) return [];
+          const arr = Array.isArray(raw) ? raw : Object.values(raw);
+          return arr.map((m, i) => ({ id: m.id || `${type}${i}`, name: m.name, type, contribution: m.contribution ?? m.tasks ?? 0 }));
+        };
+        parsed = {
+          ...defaultState(),
+          ...data,
+          members: {
+            fe: parseMembers(data.members?.fe, 'fe'),
+            be: parseMembers(data.members?.be, 'be'),
+          },
+          history: data.history
+            ? Array.isArray(data.history)
+              ? data.history
+              : Object.values(data.history)
+            : [],
+          pointers: { fe: data.pointers?.fe || 0, be: data.pointers?.be || 0 },
+          lastAssigned: data.lastAssigned || null,
+        };
+      }
+      setState(parsed);
+      setLoading(false);
+    }, (error) => {
+      clearTimeout(timeoutId);
+      console.error('Firebase read error:', error);
+      setState(defaultState());
+      setLoading(false);
+    });
 
-    let cleanup;
-    init().then(fn => { cleanup = fn; });
-    return () => { if (cleanup) cleanup(); };
+    return () => { unsubscribe(); clearTimeout(timeoutId); };
   }, []);
 
   // Dispatch auto (assign to index 0 = least loaded)
@@ -281,6 +289,7 @@ export default function App() {
     });
     const data = await res.json();
     if (data.ok) {
+      adminPasswordRef.current = password;
       setIsAdmin(true);
       setLoginModalOpen(false);
       return true;
@@ -290,6 +299,7 @@ export default function App() {
 
   const toggleAdmin = useCallback(() => {
     if (isAdmin) {
+      adminPasswordRef.current = null;
       setIsAdmin(false);
     } else {
       setLoginModalOpen(true);
