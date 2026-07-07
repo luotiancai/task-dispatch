@@ -297,6 +297,23 @@ export default function App() {
     return false;
   }, []);
 
+  // Clean history records of deleted members
+  const cleanDeletedHistory = useCallback(() => {
+    if (!isAdmin || !state) return;
+    const s = JSON.parse(JSON.stringify(state));
+    const currentMemberNames = new Set([
+      ...s.members.fe.map(m => m.name),
+      ...s.members.be.map(m => m.name),
+    ]);
+    const deletedCount = s.history.filter(h => !currentMemberNames.has(h.name)).length;
+    if (deletedCount === 0) {
+      alert('没有需要清理的记录');
+      return;
+    }
+    s.history = s.history.filter(h => currentMemberNames.has(h.name));
+    saveState(s);
+  }, [isAdmin, state, saveState]);
+
   const toggleAdmin = useCallback(() => {
     if (isAdmin) {
       adminPasswordRef.current = null;
@@ -380,6 +397,7 @@ export default function App() {
           onDeleteTask={deleteTask}
           onOpenReassignModal={openReassignModal}
           onOpenEditContribModal={openEditContribModal}
+          onCleanDeletedHistory={cleanDeletedHistory}
         />
       </div>
 

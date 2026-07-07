@@ -18,6 +18,7 @@ export default function DispatchPanel({
   onDeleteTask,
   onOpenReassignModal,
   onOpenEditContribModal,
+  onCleanDeletedHistory,
 }) {
   const [taskInput, setTaskInput] = useState('');
   const [contribution, setContribution] = useState(1);
@@ -144,6 +145,27 @@ export default function DispatchPanel({
 
       <div className="divider" />
       <p className="section-label" style={{ marginBottom: 8 }}>分发记录</p>
+      {isAdmin && (
+        <button
+          className="clean-history-btn"
+          onClick={() => {
+            const currentMemberNames = new Set([
+              ...state.members.fe.map(m => m.name),
+              ...state.members.be.map(m => m.name),
+            ]);
+            const deletedCount = state.history.filter(h => !currentMemberNames.has(h.name)).length;
+            if (deletedCount === 0) {
+              alert('没有需要清理的记录');
+              return;
+            }
+            if (confirm(`将清理 ${deletedCount} 条已删除成员的历史记录，确定继续？`)) {
+              onCleanDeletedHistory();
+            }
+          }}
+        >
+          🧹 清理已删除成员记录
+        </button>
+      )}
       <div className="history-list">
         <HistoryList
           state={state}
