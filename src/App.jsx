@@ -259,6 +259,9 @@ export default function App() {
     if (!deleteModalTarget) return;
     const s = JSON.parse(JSON.stringify(state));
     const { type, idx } = deleteModalTarget;
+    const member = s.members[type][idx];
+    // 清理该成员的历史记录
+    s.history = s.history.filter(h => h.name !== member.name || h.type !== member.type);
     s.members[type].splice(idx, 1);
     if (s.members[type].length > 0) {
       s.pointers[type] = s.pointers[type] % s.members[type].length;
@@ -296,23 +299,6 @@ export default function App() {
     }
     return false;
   }, []);
-
-  // Clean history records of deleted members
-  const cleanDeletedHistory = useCallback(() => {
-    if (!isAdmin || !state) return;
-    const s = JSON.parse(JSON.stringify(state));
-    const currentMemberNames = new Set([
-      ...s.members.fe.map(m => m.name),
-      ...s.members.be.map(m => m.name),
-    ]);
-    const deletedCount = s.history.filter(h => !currentMemberNames.has(h.name)).length;
-    if (deletedCount === 0) {
-      alert('没有需要清理的记录');
-      return;
-    }
-    s.history = s.history.filter(h => currentMemberNames.has(h.name));
-    saveState(s);
-  }, [isAdmin, state, saveState]);
 
   const toggleAdmin = useCallback(() => {
     if (isAdmin) {
@@ -397,7 +383,6 @@ export default function App() {
           onDeleteTask={deleteTask}
           onOpenReassignModal={openReassignModal}
           onOpenEditContribModal={openEditContribModal}
-          onCleanDeletedHistory={cleanDeletedHistory}
         />
       </div>
 
