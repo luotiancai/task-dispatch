@@ -31,6 +31,13 @@ function normalizeContributions(s, type) {
   const minC = Math.min(...members.map(m => m.contribution));
   if (minC > 0) {
     members.forEach(m => { m.contribution = Math.round((m.contribution - minC) * 100) / 100; });
+    // 归一化时倒转并列最低（=0）的成员顺序。
+    // 刚被分配的人是从队首 +贡献 的，归零后稳定排序会把他留在队首，
+    // 导致同一个人连续被分配两次；倒转后最久没被分配的人回到队首。
+    const minIdxs = [];
+    members.forEach((m, i) => { if (m.contribution === 0) minIdxs.push(i); });
+    const reversed = minIdxs.map(i => members[i]).reverse();
+    minIdxs.forEach((pos, k) => { members[pos] = reversed[k]; });
   }
 }
 
