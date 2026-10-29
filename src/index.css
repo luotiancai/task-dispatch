@@ -238,6 +238,9 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .h-who { font-weight: 700; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
 .h-contrib { font-family: 'DM Mono', monospace; font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; background: var(--highlight); color: var(--ink); font-weight: 700; white-space: nowrap; }
 .h-direct { font-family: 'DM Mono', monospace; font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; background: #6c5ce7; color: white; font-weight: 700; white-space: nowrap; }
+.h-delayed { font-family: 'DM Mono', monospace; font-size: 0.55rem; padding: 1px 5px; border-radius: 2px; background: #e17055; color: white; font-weight: 700; white-space: nowrap; }
+.history-item.delayed { opacity: 0.6; }
+.history-item.delayed .h-contrib { text-decoration: line-through; }
 .h-task {
   font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted);
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3;
@@ -249,6 +252,9 @@ header h1 { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px; }
 .h-reassign:hover { color: var(--highlight); background: rgba(0,0,0,0.06); }
 .h-edit-contrib { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 0.7rem; padding: 2px 5px; border-radius: 3px; transition: all 0.15s; line-height: 1; margin-right: 2px; }
 .h-edit-contrib:hover { color: var(--highlight); background: rgba(0,0,0,0.06); }
+.h-delay { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 0.7rem; padding: 2px 5px; border-radius: 3px; transition: all 0.15s; line-height: 1; margin-right: 2px; }
+.h-delay:hover { color: #e17055; background: rgba(0,0,0,0.06); }
+.h-delay.active { color: #e17055; }
 .h-del { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 0.85rem; padding: 2px 4px; border-radius: 3px; transition: all 0.15s; line-height: 1; }
 .h-del:hover { color: #c0392b; background: #fdf0ee; }
 

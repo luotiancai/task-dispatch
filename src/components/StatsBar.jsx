@@ -10,7 +10,7 @@ export default function StatsBar({ state }) {
 
   const oneMonthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const histMap = {};
-  (state?.history || []).filter(h => (h.ts ?? 0) >= oneMonthAgo).forEach(h => {
+  (state?.history || []).filter(h => !h.delayed && (h.ts ?? 0) >= oneMonthAgo).forEach(h => {
     const key = `${h.type}:${h.name}`;
     histMap[key] = (histMap[key] || 0) + (h.contribution ?? 1);
   });
@@ -26,7 +26,7 @@ export default function StatsBar({ state }) {
       <div className="leaderboard-list">
         {sorted.map((m, i) => {
           const c = m.total;
-          const pct = max > 0 ? (c / max) * 100 : 0;
+          const pct = max > 0 && c > 0 ? (c / max) * 100 : 0;
           return (
             <div key={m.id} className="lb-row">
               <span className="lb-rank">{i < 3 ? MEDALS[i] : i + 1}</span>

@@ -16,7 +16,7 @@ export default function EditContribModal({ open, taskIdx, state, onClose, onSave
 
   const handleSave = () => {
     const num = parseFloat(value);
-    if (isNaN(num) || num < 0) return;
+    if (isNaN(num)) return;
     onSave(Math.round(num * 100) / 100);
   };
 
@@ -29,7 +29,6 @@ export default function EditContribModal({ open, taskIdx, state, onClose, onSave
         </p>
         <input
           type="number"
-          min="0"
           step="0.5"
           value={value}
           onChange={e => setValue(e.target.value)}

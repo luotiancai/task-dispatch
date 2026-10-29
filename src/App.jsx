@@ -204,8 +204,9 @@ export default function App() {
       const s = JSON.parse(JSON.stringify(state));
       const h = s.history[idx];
       if (!h) return;
-      const m = s.members[h.type]?.find(m => m.name === h.name);
-      if (m) m.contribution = Math.max(0, Math.round((m.contribution - (h.contribution || 1)) * 100) / 100);
+      // 延期的任务贡献已经扣过了，删除时不再重复扣
+      const m = h.delayed ? null : s.members[h.type]?.find(m => m.name === h.name);
+      if (m) m.contribution = Math.round((m.contribution - (h.contribution ?? 1)) * 100) / 100;
       if (s.members[h.type]) s.members[h.type].sort((a, b) => a.contribution - b.contribution);
       s.history.splice(idx, 1);
       saveState(s);
@@ -221,8 +222,9 @@ export default function App() {
     const oldMember = s.members[h.type]?.find(m => m.name === h.name);
     const newMember = s.members[newMemberType]?.find(m => m.id === newMemberId);
     if (!newMember) return;
-    const c = h.contribution || 1;
-    if (oldMember) oldMember.contribution = Math.max(0, Math.round((oldMember.contribution - c) * 100) / 100);
+    // 延期的任务不计入贡献，改派时只换人
+    const c = h.delayed ? 0 : (h.contribution ?? 1);
+    if (oldMember) oldMember.contribution = Math.round((oldMember.contribution - c) * 100) / 100;
     newMember.contribution = Math.round((newMember.contribution + c) * 100) / 100;
     h.name = newMember.name;
     h.type = newMember.type;
@@ -239,15 +241,32 @@ export default function App() {
     if (!h) return;
     const oldC = h.contribution ?? 1;
     const diff = newContrib - oldC;
-    const member = s.members[h.type]?.find(m => m.name === h.name);
+    const member = h.delayed ? null : s.members[h.type]?.find(m => m.name === h.name);
     if (member) {
-      member.contribution = Math.max(0, Math.round((member.contribution + diff) * 100) / 100);
+      member.contribution = Math.round((member.contribution + diff) * 100) / 100;
     }
     h.contribution = newContrib;
     saveState(s);
     setEditContribModalOpen(false);
     setEditContribTaskIdx(null);
   }, [isAdmin, editContribTaskIdx, state, saveState]);
+
+  // Toggle delayed: 延期的任务保留在记录里，但贡献从成员身上扣回
+  const toggleDelay = useCallback((idx) => {
+    if (!isAdmin || !state) return;
+    const s = JSON.parse(JSON.stringify(state));
+    const h = s.history[idx];
+    if (!h) return;
+    const c = h.contribution ?? 1;
+    const member = s.members[h.type]?.find(m => m.name === h.name);
+    if (member) {
+      member.contribution = Math.round((member.contribution + (h.delayed ? c : -c)) * 100) / 100;
+      s.members[h.type].sort((a, b) => a.contribution - b.contribution);
+    }
+    if (h.delayed) delete h.delayed;
+    else h.delayed = true;
+    saveState(s);
+  }, [isAdmin, state, saveState]);
 
   // Add member
   const addMember = useCallback((name) => {
@@ -390,6 +409,7 @@ export default function App() {
           onDeleteTask={deleteTask}
           onOpenReassignModal={openReassignModal}
           onOpenEditContribModal={openEditContribModal}
+          onToggleDelay={toggleDelay}
         />
       </div>
 

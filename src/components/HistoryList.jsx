@@ -7,6 +7,7 @@ export default function HistoryList({
   onDeleteTask,
   onOpenReassignModal,
   onOpenEditContribModal,
+  onToggleDelay,
 }) {
   const [expandedSet, setExpandedSet] = useState(new Set());
   const [page, setPage] = useState(0);
@@ -52,19 +53,21 @@ export default function HistoryList({
       {items.map(({ h, realIdx }) => {
         const expanded = expandedSet.has(realIdx);
         const taskText = h.task || '—';
+        const c = h.contribution ?? 1;
         return (
           <div
             key={realIdx}
             id={`h-${realIdx}`}
-            className={`history-item ${h.type}${removingIdx === realIdx ? ' removing' : ''}`}
+            className={`history-item ${h.type}${h.delayed ? ' delayed' : ''}${removingIdx === realIdx ? ' removing' : ''}`}
           >
             {/* 上行：序号、徽章、人名、标签、操作按钮 */}
             <div className="h-top">
               <span className="h-idx">{realIdx + 1}</span>
               <span className={`h-badge ${h.type}`}>{h.type.toUpperCase()}</span>
               <span className="h-who">{h.name}</span>
-              <span className="h-contrib">+{h.contribution ?? 1}</span>
+              <span className="h-contrib">{c >= 0 ? `+${c}` : c}</span>
               {h.direct && <span className="h-direct">指定</span>}
+              {h.delayed && <span className="h-delayed">延期</span>}
               <span style={{ flex: 1 }} />
               {isAdmin && (
                 <button
@@ -73,6 +76,15 @@ export default function HistoryList({
                   title="修改贡献值"
                 >
                   ✎
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  className={`h-delay${h.delayed ? ' active' : ''}`}
+                  onClick={() => onToggleDelay(realIdx)}
+                  title={h.delayed ? '取消延期' : '标记延期'}
+                >
+                  ⏸
                 </button>
               )}
               {isAdmin && (

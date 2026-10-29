@@ -18,6 +18,7 @@ export default function DispatchPanel({
   onDeleteTask,
   onOpenReassignModal,
   onOpenEditContribModal,
+  onToggleDelay,
 }) {
   const [taskInput, setTaskInput] = useState('');
   const [contribution, setContribution] = useState(1);
@@ -89,7 +90,6 @@ export default function DispatchPanel({
                 type="number"
                 className="task-input"
                 placeholder="贡献值（默认 1）"
-                min="0.1"
                 step="0.5"
                 value={contribution}
                 onChange={e => setContribution(e.target.value)}
@@ -124,7 +124,6 @@ export default function DispatchPanel({
                 type="number"
                 className="task-input"
                 placeholder="贡献值（默认 1）"
-                min="0.1"
                 step="0.5"
                 value={directContribution}
                 onChange={e => setDirectContribution(e.target.value)}
@@ -152,6 +151,7 @@ export default function DispatchPanel({
           onDeleteTask={onDeleteTask}
           onOpenReassignModal={onOpenReassignModal}
           onOpenEditContribModal={onOpenEditContribModal}
+          onToggleDelay={onToggleDelay}
         />
       </div>
     </div>
