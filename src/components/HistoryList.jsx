@@ -73,7 +73,7 @@ export default function HistoryList({
                 <button
                   className="h-edit-contrib"
                   onClick={() => onOpenEditContribModal(realIdx)}
-                  title="修改贡献值"
+                  title="编辑任务"
                 >
                   ✎
                 </button>

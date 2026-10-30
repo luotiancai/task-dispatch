@@ -31,14 +31,13 @@ function normalizeContributions(s, type) {
   const minC = Math.min(...members.map(m => m.contribution));
   if (minC > 0) {
     members.forEach(m => { m.contribution = Math.round((m.contribution - minC) * 100) / 100; });
-    // 归一化时倒转并列最低（=0）的成员顺序。
-    // 刚被分配的人是从队首 +贡献 的，归零后稳定排序会把他留在队首，
-    // 导致同一个人连续被分配两次；倒转后最久没被分配的人回到队首。
-    const minIdxs = [];
-    members.forEach((m, i) => { if (m.contribution === 0) minIdxs.push(i); });
-    const reversed = minIdxs.map(i => members[i]).reverse();
-    minIdxs.forEach((pos, k) => { members[pos] = reversed[k]; });
   }
+}
+
+// 按贡献升序排列，刚被分配的人排在同分成员的最后。
+// 否则稳定排序会把他留在队首（如 -1 → 0、或归一化后全员归零），导致连续被分配。
+function sortMembers(s, type, assignedId) {
+  s.members[type].sort((a, b) => a.contribution - b.contribution || (a.id === assignedId) - (b.id === assignedId));
 }
 
 export default function App() {
@@ -82,6 +81,11 @@ export default function App() {
   }, []);
 
   const saveState = useCallback(async (newState) => {
+    // 只保留现有成员的记录，已删除成员（含历史遗留）的记录在保存时一并清掉
+    newState = {
+      ...newState,
+      history: (newState.history || []).filter(h => newState.members[h.type]?.some(m => m.name === h.name)),
+    };
     updateSyncStatus('saving');
     try {
       const res = await fetch('/api/save', {
@@ -159,7 +163,7 @@ export default function App() {
     const member = s.members[t][0];
     s.members[t][0].contribution = Math.round((s.members[t][0].contribution + contribution) * 100) / 100;
     normalizeContributions(s, t);
-    s.members[t].sort((a, b) => a.contribution - b.contribution);
+    sortMembers(s, t, member.id);
 
     if (!s.history) s.history = [];
     s.history.push({ name: member.name, type: member.type, task: taskName, contribution, ts: Date.now() });
@@ -184,7 +188,7 @@ export default function App() {
 
     member.contribution = Math.round((member.contribution + contribution) * 100) / 100;
     normalizeContributions(s, selectedMemberType);
-    s.members[selectedMemberType].sort((a, b) => a.contribution - b.contribution);
+    sortMembers(s, selectedMemberType, member.id);
 
     if (!s.history) s.history = [];
     s.history.push({ name: member.name, type: member.type, task: taskName, contribution, ts: Date.now(), direct: true });
@@ -226,6 +230,8 @@ export default function App() {
     const c = h.delayed ? 0 : (h.contribution ?? 1);
     if (oldMember) oldMember.contribution = Math.round((oldMember.contribution - c) * 100) / 100;
     newMember.contribution = Math.round((newMember.contribution + c) * 100) / 100;
+    if (oldMember && oldMember.type !== newMemberType) sortMembers(s, oldMember.type);
+    sortMembers(s, newMemberType, newMember.id);
     h.name = newMember.name;
     h.type = newMember.type;
     saveState(s);
@@ -233,8 +239,8 @@ export default function App() {
     setReassignTaskIdx(null);
   }, [isAdmin, reassignTaskIdx, state, saveState]);
 
-  // Edit contribution value of a history entry
-  const editContrib = useCallback((newContrib) => {
+  // Edit task name and contribution value of a history entry
+  const editContrib = useCallback((newTask, newContrib) => {
     if (!isAdmin || editContribTaskIdx === null || !state) return;
     const s = JSON.parse(JSON.stringify(state));
     const h = s.history[editContribTaskIdx];
@@ -246,6 +252,7 @@ export default function App() {
       member.contribution = Math.round((member.contribution + diff) * 100) / 100;
     }
     h.contribution = newContrib;
+    h.task = newTask;
     saveState(s);
     setEditContribModalOpen(false);
     setEditContribTaskIdx(null);
@@ -261,7 +268,8 @@ export default function App() {
     const member = s.members[h.type]?.find(m => m.name === h.name);
     if (member) {
       member.contribution = Math.round((member.contribution + (h.delayed ? c : -c)) * 100) / 100;
-      s.members[h.type].sort((a, b) => a.contribution - b.contribution);
+      // 取消延期等于把贡献加回去，按刚分配处理
+      sortMembers(s, h.type, h.delayed ? member.id : null);
     }
     if (h.delayed) delete h.delayed;
     else h.delayed = true;
@@ -285,9 +293,6 @@ export default function App() {
     if (!deleteModalTarget) return;
     const s = JSON.parse(JSON.stringify(state));
     const { type, idx } = deleteModalTarget;
-    const member = s.members[type][idx];
-    // 清理该成员的历史记录
-    s.history = s.history.filter(h => h.name !== member.name || h.type !== member.type);
     s.members[type].splice(idx, 1);
     if (s.members[type].length > 0) {
       s.pointers[type] = s.pointers[type] % s.members[type].length;
@@ -303,7 +308,13 @@ export default function App() {
   const saveName = useCallback((name) => {
     if (!nameModalTarget) return;
     const s = JSON.parse(JSON.stringify(state));
-    s.members[nameModalTarget.type][nameModalTarget.idx].name = name;
+    const { type, idx } = nameModalTarget;
+    const member = s.members[type][idx];
+    // 改名时同步历史记录，否则旧名字的记录会变成孤儿
+    s.history.forEach(h => {
+      if (h.type === type && h.name === member.name) h.name = name;
+    });
+    member.name = name;
     setNameModalOpen(false);
     setNameModalTarget(null);
     saveState(s);
