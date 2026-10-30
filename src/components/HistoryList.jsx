@@ -1,5 +1,11 @@
 import { useState } from 'react';
 
+const pad = n => String(n).padStart(2, '0');
+const formatTime = ts => {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 export default function HistoryList({
   state,
   isAdmin,
@@ -114,6 +120,7 @@ export default function HistoryList({
             >
               {taskText}
             </div>
+            {h.ts && <div className="h-time">{formatTime(h.ts)}</div>}
           </div>
         );
       })}

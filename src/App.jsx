@@ -234,6 +234,7 @@ export default function App() {
     sortMembers(s, newMemberType, newMember.id);
     h.name = newMember.name;
     h.type = newMember.type;
+    h.ts = Date.now();
     saveState(s);
     setReassignModalOpen(false);
     setReassignTaskIdx(null);
